@@ -205,6 +205,9 @@ namespace NaviMapNet
         /// </summary>
         public string Name { get { return _name;} set {_name = value;} }
 
+        private string _Text = String.Empty;
+        public string Text { get { return _Text; } set { _Text = value; } }
+
         /// <summary>
         ///     Цвет обводки объекта
         /// </summary>
@@ -262,6 +265,12 @@ namespace NaviMapNet
         /// <param name="zoom">Зум</param>
         /// <returns>Отображать</returns>
         public abstract bool ShowObject(double zoom);
+
+        private bool _DrawText = false;
+        public bool DrawText { get { return _DrawText; } set { _DrawText = value; } }
+        public Brush TextBrush = new SolidBrush(Color.Black);
+        public Font TextFont = new Font("Arial", 8, FontStyle.Regular);
+        public Point TextOffset = new Point(0, 0);
     }
 
     /// <summary>

@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Data;
 using System.Text;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace NaviMapNet
 {
@@ -23,7 +24,7 @@ namespace NaviMapNet
         }
 
         #region override
-        public string Author { get { return "milokz@gmail.com)"; } }
+        public string Author { get { return "milokz@gmail.com"; } }
         public override bool AutoScroll { get { return false; } }
         public override Color ForeColor { get { return Color.Transparent; } }
         public override Color BackColor { get { return imagePanel.BackColor; } set { imagePanel.BackColor = value; } }
@@ -31,7 +32,7 @@ namespace NaviMapNet
         public override ImageLayout BackgroundImageLayout { get { return ImageLayout.None; } }
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
-        public override Cursor Cursor {get{return base.Cursor;}set{base.Cursor = value;} }
+        public override Cursor Cursor { get { return base.Cursor; } set { base.Cursor = value; } }
         #endregion
 
         #region events
@@ -49,8 +50,17 @@ namespace NaviMapNet
         #endregion
 
         private int WebRequestTimeout_ = 100000;
-        public int WebRequestTimeout { get { return WebRequestTimeout_; } set { WebRequestTimeout_ = value; } }        
+        public int WebRequestTimeout { get { return WebRequestTimeout_; } set { WebRequestTimeout_ = value; } }
         
+        private bool _invertBackground = false;
+        public bool InvertBackground { get { return _invertBackground; } set { _invertBackground = value; this.ReloadMap(); } }
+
+        private bool _useDiskCache = false;
+        public bool UseDiskCache { get { return _useDiskCache; } set { _useDiskCache = value; ShowUseCacheBtn.Checked = _useDiskCache; } }
+
+        private bool _useDefContMen = false;
+        public bool UseDefaultContextMenu { get { return _useDefContMen; } set { _useDefContMen = value; } }
+
         private System.Globalization.CultureInfo stream_CultureInfo = System.Globalization.CultureInfo.InstalledUICulture;
         private System.Globalization.NumberFormatInfo ni;
 
@@ -85,9 +95,9 @@ namespace NaviMapNet
             set
             {
                 MapTool_ = value;
-                if (value == MapTools.mtShift) this.Cursor = DefaultMapCursor_;
-                if (value == MapTools.mtZoomIn) this.Cursor = MapCursors.ZoomIn;
-                if (value == MapTools.mtZoomOut) this.Cursor = MapCursors.ZoomOut;
+                if (value == MapTools.mtShift) { this.Cursor = DefaultMapCursor_; mttShift.Checked = true; mttZoomIn.Checked = false; mttZoomOut.Checked = false; };
+                if (value == MapTools.mtZoomIn) { this.Cursor = MapCursors.ZoomIn; mttShift.Checked = false; mttZoomIn.Checked = true; mttZoomOut.Checked = false; };
+                if (value == MapTools.mtZoomOut) { this.Cursor = MapCursors.ZoomOut; mttShift.Checked = false; mttZoomIn.Checked = false; mttZoomOut.Checked = true; };
             }
             get { return MapTool_; }
         }
@@ -126,6 +136,15 @@ namespace NaviMapNet
             OSM_Mapnik = 0x03,
             OSM_Openvkarte = 0x04,
             OSM_Wikimapia = 0x05,
+            
+            OSM_MapSerfer = 0x07,
+            OSM_Cyclemap = 0x08,
+            OSM_MapQuest = 0x09,
+            OSM_German = 0x10,
+            OSM_Gray = 0x11,
+            OSM_Aqua = 0x12,
+            OSM_HOT = 0x13,
+            
             Rosreestr = 0x06,
             Custom_LocalFiles = 0xFD,
             Custom_LocalHost_WMS7759 = 0x0FE,
@@ -176,6 +195,48 @@ namespace NaviMapNet
                     ImageSourceUrl_ = "http://i{w}.wikimapia.org/?lng=1&x={x}&y={y}&zoom={z}";
                     ReloadMap();
                 };
+                if (value == MapServices.OSM_MapSerfer)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://129.206.74.245:8001/tms_r.ashx?x={x}&y={y}&z={z}";
+                    ReloadMap();
+                };
+                if (value == MapServices.OSM_Cyclemap)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png";
+                    ReloadMap();
+                };
+                if (value == MapServices.OSM_MapQuest)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg";
+                    ReloadMap();
+                };
+                if (value == MapServices.OSM_German)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://{s}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png";
+                    ReloadMap();
+                };
+                if (value == MapServices.OSM_Gray)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png";
+                    ReloadMap();
+                };
+                if (value == MapServices.OSM_Aqua)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.png";
+                    ReloadMap();
+                };
+                if (value == MapServices.OSM_HOT)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = "http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png";
+                    ReloadMap();
+                };             
                 if(value == MapServices.Rosreestr)
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
@@ -186,7 +247,7 @@ namespace NaviMapNet
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
                     if(ImageSourceUrl_.ToLower().IndexOf("http://") == 0)
-                        ImageSourceUrl_ = System.Environment.CurrentDirectory + @"\_TILES\L{l}\R{r}\C{c}.png";
+                        ImageSourceUrl_ = NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\CACHE\" + ((int)MapServices.OSM_Mapnik).ToString("X8") +  @"\L{l}\R{r}\C{c}.png";
                     ReloadMap();
                 };
                 if (value == MapServices.Custom_LocalHost_WMS7759)
@@ -199,6 +260,16 @@ namespace NaviMapNet
                 if (OnMapChange != null) OnMapChange();
             }
         }
+
+        public static string GetCurrentDir()
+        {
+            string fname = System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase.ToString();
+            fname = fname.Replace("file:///", "");
+            fname = fname.Replace("/", @"\");
+            fname = fname.Substring(0, fname.LastIndexOf(@"\") + 1);
+            return fname;
+        }
+
         /// <summary>
         ///     Тип картинки
         /// </summary>
@@ -229,6 +300,7 @@ namespace NaviMapNet
         ///     {c} - arcgis column
         ///     {wms} - WMS request replacement
         ///     {w} - wikimapia server replacement
+        ///     {s} - a/b/c replacement
         /// </summary>
         public string ImageSourceUrl { get { return ImageSourceUrl_; } set { 
             if ((ImageSourceService_ != MapServices.Custom_UserDefined) &&
@@ -601,7 +673,10 @@ namespace NaviMapNet
             {
                 if (mapImage.Image == null) return null;
                 Bitmap ovedata = new Bitmap(this.OversizeWidth, this.OversizeHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                DrawOnMapData(Graphics.FromImage(ovedata));
+                Graphics dv = Graphics.FromImage(ovedata);
+                DrawOnMapData(dv);
+                DrawSelection(dv);
+                dv.Dispose();
 
                 Bitmap b = new Bitmap(this.Width, this.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                 Graphics g = Graphics.FromImage(b);
@@ -621,7 +696,10 @@ namespace NaviMapNet
             {
                 if (mapImage.Image == null) return null;
                 Bitmap ovedata = new Bitmap(this.OversizeWidth, this.OversizeHeight, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                DrawOnMapData(Graphics.FromImage(ovedata));
+                Graphics dv = Graphics.FromImage(ovedata);
+                DrawOnMapData(dv);
+                DrawSelection(dv);
+                dv.Dispose();
                 return (Image)ovedata;
             }
         }
@@ -675,16 +753,16 @@ namespace NaviMapNet
             if ((buf[10] & 0x80) > 0)
             {
                 i = 1 << ((buf[10] & 7) + 1) == 256 ? 256 : 0;
-            }
+            };
             for (; i != 0; i--)
             {
                 fin.Read(buf, 0, 3);
-                if ((buf[0] == R) && (buf[1] == G) && (buf[2] == B))
+                if ((buf[0] == R) && (buf[1] == G) && (buf[2] == B)) // -*=R=*-\|/-*=G=*-\|/-*=B=*- iddqd
                 {
                     transparentIdx = (byte)(256 - i);
-                }
+                };
                 fout.Write(buf, 0, 3);
-            }
+            };
             bool gcePresent = false;
             while (true)
             {
@@ -707,16 +785,16 @@ namespace NaviMapNet
                         {
                             buf[0] |= 0x01;
                             buf[3] = transparentIdx;
-                        }
-                    }
+                        };
+                    };
                     fout.Write(buf, 0, count);
-                }
-            }
+                };
+            };
             while (count > 0)
             {
                 count = fin.Read(buf, 0, 1);
                 fout.Write(buf, 0, 1);
-            }
+            };
             fin.Close();
             fout.Flush();
             return new Bitmap(fout);
@@ -743,7 +821,7 @@ namespace NaviMapNet
         /// <summary>
         ///     Курсор карты по умолчанию
         /// </summary>
-        public Cursor DefaultMapCursor { get { return DefaultMapCursor_; } set { DefaultMapCursor_ = value; if (MapTool_ == MapTools.mtShift) this.Cursor = DefaultMapCursor_; } }
+        public Cursor DefaultMapCursor { get { return DefaultMapCursor_; } set { DefaultMapCursor_ = value; ChangeKeyedMapCursor(); } }
         /// <summary>
         ///     Отрисовывать карту
         /// </summary>
@@ -759,7 +837,7 @@ namespace NaviMapNet
         /// <summary>
         ///     Отображать на тайлы его XYZ
         /// </summary>
-        public bool DrawTilesXYZ { get { return DrawTileXYZ_; } set { DrawTileXYZ_ = value; } }
+        public bool DrawTilesXYZ { get { return DrawTileXYZ_; } set { DrawTileXYZ_ = value; ShowXYZBtn.Checked = DrawTileXYZ_; } }
         /// <summary>
         ///     Отображать границы тайлов
         /// </summary>
@@ -767,7 +845,7 @@ namespace NaviMapNet
         /// <summary>
         ///     Отображать границы тайлов
         /// </summary>
-        public bool DrawTilesBorder { get { return DrawTileBorder_;} set { DrawTileBorder_ = value; }}
+        public bool DrawTilesBorder { get { return DrawTileBorder_; } set { DrawTileBorder_ = value; ShowTileBorderBtn.Checked = DrawTileBorder_; } }
         /// <summary>
         ///     Масштаб зоны для нарезки тайлов X*X в тайлах, 0 или 1 - не выводить
         /// </summary>
@@ -787,15 +865,15 @@ namespace NaviMapNet
         /// <summary>
         ///     Отображать линейку зумов
         /// </summary>
-        public bool ShowZooms { set { zoomLevels.Visible = value; } get { return zoomLevels.Visible; } }
+        public bool ShowZooms { set { zoomLevels.Visible = value; ShowZoomsBtn.Checked = zoomLevels.Visible; } get { return zoomLevels.Visible; } }
         /// <summary>
         ///     Отображать перекрестие карты
         /// </summary>
-        public bool ShowCross { set { crossImage.Visible = value; } get { return crossImage.Visible; } }
+        public bool ShowCross { set { crossImage.Visible = value; ShowCrossBtn.Checked = crossImage.Visible; } get { return crossImage.Visible; } }
         /// <summary>
         ///     Отображать шкалу масштаба
         /// </summary>
-        public bool ShowScale { set { scaleImage.Visible = value; } get { return scaleImage.Visible; } }
+        public bool ShowScale { set { scaleImage.Visible = value; ShowZoomBtn.Checked = scaleImage.Visible; } get { return scaleImage.Visible; } }
         /// <summary>
         ///     Сдвиг на эту величину (в пикселях) считается случайным и не обрабатывается
         /// </summary>
@@ -827,6 +905,10 @@ namespace NaviMapNet
         ///     Map is Moving By Mouse
         /// </summary>
         private bool MouseMapMove_ = false;
+        private bool MouseMoveReal = false;
+        private bool MouseMapZoom_ = false;
+        private bool MouseMapSelection_ = false;
+        private bool BreakNext = false;
         /// <summary>
         ///     Координаты курсора относительно центра карты в экранных пикселях
         /// </summary>
@@ -865,6 +947,48 @@ namespace NaviMapNet
                 return TilesProjection.fromLLtoMeter(MousePositionDegrees);                
             }
         }
+
+        /// <summary>
+        ///     Координаты последнего клика относительно центра карты в экранных пикселях
+        /// </summary>
+        public Point MouseDownScreen { get { return MousePositionDown_; } }
+
+        /// <summary>
+        ///     Координаты последнего клика относительно центра карты в пикселях карты
+        /// </summary>
+        public Point MouseDownPixels
+        {
+            get
+            {
+                Point mp = MousePositionDown_;
+                Point mc = CenterPixels;
+                return new Point(mc.X + mp.X, mc.Y + mp.Y);
+            }
+        }
+
+        /// <summary>
+        ///     Координаты последнего клика относительно карты в градусах
+        /// </summary>
+        public PointF MouseDownDegrees
+        {
+            get
+            {
+                Point px = MouseDownPixels;
+                double[] ll = TilesProjection.fromPixelToLL(new double[] { px.X, px.Y }, ZoomID_);
+                return new PointF((float)ll[0], (float)ll[1]);
+            }
+        }
+
+        /// <summary>
+        ///     Координаты последнего клика относительно карты в метрах проеции
+        /// </summary>
+        public PointF MouseDownMeters
+        {
+            get
+            {
+                return TilesProjection.fromLLtoMeter(MouseDownDegrees);
+            }
+        }
         #endregion 
 
         #region Map Vector Layers
@@ -872,6 +996,7 @@ namespace NaviMapNet
         ///     Слои карты
         /// </summary>
         private MapLayers _mapLayers = null;
+        private MapLayers _selLayer = null;
         /// <summary>
         ///     Векторные слои карты
         /// </summary>
@@ -924,8 +1049,15 @@ namespace NaviMapNet
             selMapType.Items.Add(MapServices.OSM_Mapnik);
             selMapType.Items.Add(MapServices.OSM_Openvkarte);
             selMapType.Items.Add(MapServices.OSM_Wikimapia);
+            selMapType.Items.Add(MapServices.OSM_Cyclemap);
+            selMapType.Items.Add(MapServices.OSM_MapQuest);
+            selMapType.Items.Add(MapServices.OSM_MapSerfer);
+            selMapType.Items.Add(MapServices.OSM_German);
+            selMapType.Items.Add(MapServices.OSM_Gray);
+            selMapType.Items.Add(MapServices.OSM_Aqua);
+            selMapType.Items.Add(MapServices.OSM_HOT);
             selMapType.Items.Add(MapServices.Rosreestr);
-            selMapType.Items.Add(MapServices.Custom_LocalHost_WMS7759);
+            // selMapType.Items.Add(MapServices.Custom_LocalHost_WMS7759);
             selMapType.Items.Add(MapServices.Custom_LocalFiles);
             selMapType.Items.Add(MapServices.Custom_UserDefined);
             selMapType.Text = ImageSourceService_.ToString();
@@ -953,6 +1085,9 @@ namespace NaviMapNet
             MouseMessageFilter.MouseUp += (mu = new MouseEventHandler(MouseMessageFilter_MouseUp));
             mapImage.MouseWheel += new MouseEventHandler(NaviMapNetViewer_MouseWheel);
 
+            (mapImage as Control).KeyDown += new KeyEventHandler(NaviMapNetViewer_KeyDown);
+            (mapImage as Control).KeyUp += new KeyEventHandler(NaviMapNetViewer_KeyUp);
+
             // Map Defaults
             this.Cursor = DefaultMapCursor_;
             imagePanel.Left = -128;
@@ -963,12 +1098,72 @@ namespace NaviMapNet
             ImageSourceService = MapServices.OSM_Mapnik;
             selMapType.SelectedItem = ImageSourceService;
             _mapLayers = new MapLayers(this);
+            {
+                _selLayer = new MapLayers(this);
+                MapPolygon mp = new MapPolygon();
+                mp.BorderColor = Color.Black;
+                mp.BodyColor = Color.FromArgb(75, _selBoxColor);
+                MapLayer ml = new MapLayer("SELECTION");
+                _selLayer.Add(ml);
+                ml.Add(mp);
+                ml.Visible = false;
+                mp.Visible = false;
+                mp.Points = new PointF[4];
+            };
+
 
             // TestVectorLayers
             //TestVectorLayers();
 
             // Init Map Size
             ResizeMap();
+
+            //this.DrawMap = true;
+            //this.DrawSelectionBox = true;
+            //this.UseDefaultContextMenu = true;
+            //this.ShowInfoOnDblClick = true;
+        }
+
+        public bool DrawSelectionBox { get { return _selLayer[0].Visible; } set { _selLayer[0].Visible = value; if (_selLayer[0].Visible == false) ClearSelectionBox(); else this.DrawOnMapData(); } }
+        public bool SelectionBoxIsVisible { get { return _selLayer[0].Visible && _selLayer[0][0].Visible; } }
+        public void ClearSelectionBox() { _selLayer[0][0].Visible = false; HSB.Visible = false; hideSelBox.Visible = false; selBoxInfo.Visible = false; save2Shp.Visible = false; Zoom2Sel.Visible = false; this.DrawOnMapData(); }
+        private Color _selBoxColor = Color.Black;
+        public Color SelectionBoxColor { get { return _selBoxColor; } set { _selBoxColor = value; _selLayer[0][0].BodyColor = Color.FromArgb(75, value); this.DrawOnMapData(); } }
+
+        private bool KeyDownAlt = false;
+        private bool KeyDownControl = false;
+        private bool KeyDownShift = false;
+
+        private void NaviMapNetViewer_KeyUp(object sender, KeyEventArgs e)
+        {            
+            if (e.KeyValue == 18) KeyDownAlt = false;
+            if (e.KeyValue == 17) KeyDownControl = false;
+            if (e.KeyValue == 16) KeyDownShift = false;
+
+            ChangeKeyedMapCursor();            
+        }
+
+        private void NaviMapNetViewer_KeyDown(object sender, KeyEventArgs e)
+        {           
+            if (e.KeyValue == 18) KeyDownAlt = true;
+            if (e.KeyValue == 17) KeyDownControl = true;
+            if (e.KeyValue == 16) KeyDownShift = true;
+
+            ChangeKeyedMapCursor();
+        }
+
+        private void ChangeKeyedMapCursor()
+        {
+            if (KeyDownControl && (!KeyDownShift) && (!KeyDownAlt))
+                this.Cursor = MapCursors.ZoomIn;
+            else if ((!KeyDownControl) && KeyDownShift && (!KeyDownAlt) && (DrawSelectionBox))
+                this.Cursor = Cursors.Cross;
+            else
+            {
+                if (MapTool_ == MapTools.mtShift) this.Cursor = DefaultMapCursor_;
+                if (MapTool_ == MapTools.mtZoomIn) this.Cursor = MapCursors.ZoomIn;
+                if (MapTool_ == MapTools.mtZoomOut) this.Cursor = MapCursors.ZoomOut;
+            };
         }
 
         #region MapTestVectorData
@@ -1017,7 +1212,7 @@ namespace NaviMapNet
             mp.Width = 3;
             tl.Add(mp);
 
-            MapPolygon ma = new MapPolygon(new PointF[] { 
+            MapPolygon ma = new MapPolygon(new PointF[] {
                 new PointF((float)39.84084, (float)52.48743), 
                 new PointF((float)39.86084, (float)52.49743), 
                 new PointF((float)39.84084, (float)52.50743),
@@ -1069,6 +1264,8 @@ namespace NaviMapNet
             imagePanel.Height = Height + 256;
             mapImage.Width = imagePanel.Width;
             mapImage.Height = imagePanel.Height;
+            labelLoading.Top = this.Height - labelLoading.Height;
+            labelLoading.Left = this.Width - labelLoading.Width;
             ReloadMap();
         }
         #endregion
@@ -1101,9 +1298,7 @@ namespace NaviMapNet
         {
             try // IF DISPOSED
             {
-                if (MapTool_ == MapTools.mtShift) this.Cursor = DefaultMapCursor_;
-                if (MapTool_ == MapTools.mtZoomIn) this.Cursor = MapCursors.ZoomIn;
-                if (MapTool_ == MapTools.mtZoomOut) this.Cursor = MapCursors.ZoomOut;
+                ChangeKeyedMapCursor();
 
                 if (MouseMapMove_)
                 {
@@ -1112,6 +1307,8 @@ namespace NaviMapNet
                     {
                         mapImage.Left = 0;
                         mapImage.Top = 0;
+                        if (!MouseMoveReal) InternalPopup(sender, e);
+                        MouseMoveReal = false;
                         return;
                     };
 
@@ -1120,11 +1317,123 @@ namespace NaviMapNet
                     mc.Y -= mapImage.Top;
                     CenterPixels = mc;
                 };
+                if (MouseMapZoom_)
+                {
+                    MouseMapZoom_ = false;
+                    Selabel.Visible = false;
+                    ZoomBySelection();
+                };
+                if (MouseMapSelection_)
+                {
+                    MouseMapSelection_ = false;
+                    if (Selabel.Visible)
+                    {
+                        Selabel.Visible = false;
+                        SelShiftArea(sender, e);
+                    }
+                    else
+                        Selabel.Visible = false;
+                };
+                if(!MouseMoveReal) InternalPopup(sender, e);
+                MouseMoveReal = false;
             }
             catch { };
         }
-        private void MouseMessageFilter_MouseDown(object sender, MouseEventArgs e)
+
+        public void ZoomByArea(double[] minXminYmaxXmaxY)
         {
+            ZoomByArea(minXminYmaxXmaxY, -1);
+        }
+
+        public void ZoomByArea(RectangleF rect)
+        {
+            ZoomByArea(new double[] { rect.Left, rect.Bottom, rect.Right, rect.Top }, -1);
+        }
+
+        public void ZoomByArea(RectangleF rect, int zoom)
+        {
+            ZoomByArea(new double[] { rect.Left, rect.Bottom, rect.Right, rect.Top }, zoom);
+        }
+
+        public void ZoomByArea(double[] minXminYmaxXmaxY, int zoom)
+        {
+            double areaWidth = Math.Abs((TilesProjection.lon2x_m(minXminYmaxXmaxY[2]) - TilesProjection.lon2x_m(minXminYmaxXmaxY[0]))) * 0.95;
+            double areaHeight = Math.Abs((TilesProjection.lat2y_m(minXminYmaxXmaxY[3]) - TilesProjection.lat2y_m(minXminYmaxXmaxY[1]))) * 0.95;
+
+            int newZoom = ZoomID;
+            for (int i = 1; i < ZoomLevels_.Length; i++)
+            {
+                if ((Math.Min((double)(ZoomLevels_[i] * this.Width) / (double)areaWidth, ((double)(ZoomLevels_[i] * this.Height))/(double)areaHeight)) < 1) 
+                    break;
+                newZoom = i;
+            };
+            if (newZoom > MapMaxZoom_) newZoom = MapMaxZoom;
+
+            CenterLat_ = (float)((minXminYmaxXmaxY[1] + minXminYmaxXmaxY[3]) / 2);
+            CenterLon_ = (float)((minXminYmaxXmaxY[0] + minXminYmaxXmaxY[2]) / 2);
+            ZoomID_ = (zoom < MapMinZoom_) || (zoom > MapMaxZoom_) ? (byte)newZoom : (byte)zoom;
+
+            ReloadMap();
+        }
+
+        private void ZoomBySelection()
+        {
+            if ((Selabel.Width < 20) || (Selabel.Height < 20)) return;
+
+            double currWidth = ZoomLevels_[ZoomID] * Selabel.Width;
+            double needWidth = double.MaxValue;
+            int newZoom = ZoomID + 1;
+            for (int i = 1; i < ZoomLevels_.Length; i++)
+            {
+                double zoomWidth = Math.Abs(ZoomLevels_[i] * this.Width - currWidth);
+                if (zoomWidth < needWidth)
+                {
+                    needWidth = zoomWidth;
+                    newZoom = i;
+                };
+            };
+            if (newZoom > MapMaxZoom_) newZoom = MapMaxZoom_;
+
+            Point pCentSelScreen = this.PointToClient(mapImage.PointToScreen(new Point(Selabel.Left + Selabel.Width / 2, Selabel.Top + Selabel.Height / 2)));
+            pCentSelScreen.X = pCentSelScreen.X - Width / 2;
+            pCentSelScreen.Y = pCentSelScreen.Y - Height / 2;
+
+            Point mc = CenterPixels;
+            Point pCentSelPixels = new Point(mc.X + pCentSelScreen.X, mc.Y + pCentSelScreen.Y);
+
+            double[] pCentSelGeo = TilesProjection.fromPixelToLL(new double[] { pCentSelPixels.X, pCentSelPixels.Y }, ZoomID_);
+            CenterLat_ = (float)pCentSelGeo[1];
+            CenterLon_ = (float)pCentSelGeo[0];
+
+            ZoomID_ = (byte)newZoom;
+
+            ReloadMap();
+        }
+
+        private void InternalPopup(object sender, MouseEventArgs e)
+        {
+            if ((e.Button == MouseButtons.Right) && (_mouseIsOver))
+            {
+                if (KeyDownAlt) return;
+                KeyDownControl = false;
+                KeyDownShift = false;
+                ChangeKeyedMapCursor();
+
+                if (_useDefContMen)
+                {
+                    BreakNext = true;
+                    defMenu.Show(e.X, e.Y);
+                }
+                else if (this.ContextMenuStrip != null)
+                {
+                    BreakNext = true;
+                    this.ContextMenuStrip.Show(e.X, e.Y);
+                };
+            };
+        }
+
+        private void MouseMessageFilter_MouseDown(object sender, MouseEventArgs e)
+        {            
             try // IF DISPOSED
             {
             }
@@ -1144,11 +1453,29 @@ namespace NaviMapNet
                 MousePositionScreen_ = mousePosition;
                 if (MouseMapMove_)
                 {
+                    MouseMoveReal = true;
                     int _ms_x = MousePositionDown_.X - MousePositionScreen_.X;
                     int _ms_y = MousePositionDown_.Y - MousePositionScreen_.Y;
                     mapImage.Left = -1 * _ms_x;
                     mapImage.Top = -1 * _ms_y;
                     return;
+                };
+                if (MouseMapZoom_ || MouseMapSelection_)
+                {
+                    int _ms_x = MousePositionDown_.X - MousePositionScreen_.X;
+                    int _ms_y = MousePositionDown_.Y - MousePositionScreen_.Y;
+                    Point pFrom = mapImage.PointToClient(new Point(e.X + _ms_x, e.Y + _ms_y));
+                    Point pTo = mapImage.PointToClient(new Point(e.X, e.Y));                    
+                    Selabel.Left = (int)Math.Min(pFrom.X, pTo.X);
+                    Selabel.Top = (int)Math.Min(pFrom.Y, pTo.Y);
+                    Selabel.Width = (int)Math.Abs(_ms_x);
+                    Selabel.Height = (int)Math.Abs(_ms_y);
+                    if (!Selabel.Visible)
+                    {
+                        Selabel.Parent = mapImage;
+                        Selabel.BackColor = Color.Transparent;
+                        Selabel.Visible = true;
+                    };
                 };
             }
             catch { };
@@ -1159,10 +1486,34 @@ namespace NaviMapNet
             {
                 mapImage.Select();
                 MousePositionDown_ = MousePositionScreen_;
-                if (((e.Button == MouseButtons.Left) && (MapTool_ == MapTools.mtShift)) || (e.Button == MouseButtons.Right))
+
+                if (BreakNext)
+                {
+                    BreakNext = false;
+                    if (MouseOverMap_)
+                        this.OnMouseDown(e);
+                    return;
+                };
+
+                if (((e.Button == MouseButtons.Left) && (MapTool_ == MapTools.mtShift) && (KeyDownControl == false) && (KeyDownAlt == false) && (KeyDownShift == false)) || (e.Button == MouseButtons.Right))
                 {
                     this.Cursor = MapCursors.Move;
                     MouseMapMove_ = true;
+                };
+
+                if ((e.Button == MouseButtons.Left) && (MapTool_ == MapTools.mtShift) && (KeyDownControl) && (KeyDownShift == false) && (KeyDownAlt == false))
+                {
+                    this.Cursor = MapCursors.ZoomIn;
+                    MouseMapZoom_ = true;
+                };
+
+                if ((e.Button == MouseButtons.Left) && (MapTool_ == MapTools.mtShift) && (KeyDownShift) && (KeyDownControl == false) && (KeyDownControl == false))
+                {
+                    if (DrawSelectionBox)
+                    {
+                        MouseMapSelection_ = true;
+                        ClearSelectionBox();
+                    };
                 };
 
                 if (e.Button == MouseButtons.Left)
@@ -1205,7 +1556,8 @@ namespace NaviMapNet
             }
             catch { };
 
-            this.OnMouseDown(e);
+            if (MouseOverMap_)
+                this.OnMouseDown(e);
         }
         private void mapImage_MouseEnter(object sender, EventArgs e)
         {
@@ -1256,6 +1608,9 @@ namespace NaviMapNet
             if (ImageSourceType_ == ImageSourceTypes.tiles) // TILES
             {
                 MapMerger mm = new MapMerger();
+                mm.InvertBackground = this.InvertBackground;                
+                mm.CacheSubDirectory = String.IsNullOrEmpty(_UserDefinedMapName) ? ((int)ImageSourceService_).ToString("X8") : _UserDefinedMapName;
+                mm.UseDiskCache = this.UseDiskCache && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (mm.CacheSubDirectory != (0xFF).ToString("X8"));
                 mm.MinZoom = this.TilesMinZoom_;
                 mm.MaxZoom = this.TilesMaxZoom_;
                 mm.WebRequestTimeout = WebRequestTimeout_;
@@ -1265,7 +1620,10 @@ namespace NaviMapNet
                 mm.TilesRenderingZoneSize = TilesRenderingZoneSize_;
                 mm.DrawTileXYZ = DrawTilesXYZ;
                 double[] bounds = MapBoundsMinMaxOversizeDegrees;
+                labelLoading.Visible = true;
+                labelLoading.Refresh();
                 mapImage.Image = mm.GetMap(bounds[1], bounds[0], bounds[3], bounds[2], true, this.OversizeWidth, this.OversizeHeight);
+                labelLoading.Visible = false;
                 mapImage.Left = 0;
                 mapImage.Top = 0;
             };
@@ -1279,6 +1637,9 @@ namespace NaviMapNet
 
             if (OnMapUpdate != null) OnMapUpdate();
         }
+
+        private string _UserDefinedMapName = null;
+        public string UserDefinedMapName { get { return _UserDefinedMapName; } set { _UserDefinedMapName = value; } }
         
         /// <summary>
         ///     Перерисовка векторных слоев карты
@@ -1292,8 +1653,16 @@ namespace NaviMapNet
             Graphics g = Graphics.FromImage(mapImage.Image);
 
             if (DrawVector_) DrawOnMapData(g);
+            DrawSelection(g);
+            try
+            {
+                if (AfterMapDraw != null) 
+                    AfterMapDraw(g, new Rectangle(128,128,Width, Height));
+            }
+            catch { };                        
             g.Dispose();
-        }       
+        }
+      
         /// <summary>
         ///     Draw Vectors Data
         /// </summary>
@@ -1345,13 +1714,56 @@ namespace NaviMapNet
                             Rectangle bnds = mo.GetBoundsForZoom(ZoomID_);
                             if ((mo.DrawEvenSizeIsTooSmall) || ((Math.Abs(bnds.Width) > 2) && (Math.Abs(bnds.Height) > 2)))
                                 DrawMapPolygon(g, mo.Points, mo.BodyColor, mo.BorderColor, mo.SizePixels.Width);
-                        };                                                
+                        };
+                        if (mo.DrawText)
+                        {
+                            DrawMapText(g, mo.Points[0], mo.TextOffset, mo.TextFont, mo.TextBrush, mo.Text);
+                        };
                     };
                 };
             };
 
-            g.Dispose();
+            //g.Dispose();
         }
+
+        /// <summary>
+        ///     Draw Vectors Data
+        /// </summary>
+        /// <param name="g"></param>
+        private void DrawSelection(Graphics g)
+        {
+            if(_selLayer[0].Visible)
+            {
+                MapObject mo = _selLayer[0][0];                
+                if (mo.Visible && mo.ShowObject(ZoomID_))
+                {
+                    Rectangle bnds = mo.GetBoundsForZoom(ZoomID_);
+                    if ((mo.DrawEvenSizeIsTooSmall) || ((Math.Abs(bnds.Width) > 2) && (Math.Abs(bnds.Height) > 2)))
+                    {
+                        DrawMapPolygon(g, mo.Points, mo.BodyColor, mo.BorderColor, mo.SizePixels.Width);
+                        for (int i = 0; i < 3; i++)
+                        {
+                            Point pointFrom = PixelsToScreen(DegreesToPixels(mo.Points[i]));
+                            Point pointTo = PixelsToScreen(DegreesToPixels(mo.Points[i + 1]));
+                            Pen pen = new Pen(new SolidBrush(Color.White));
+                            pen.DashPattern = new float[] { 5, 5 };
+                            g.DrawLine(pen, pointFrom.X, pointFrom.Y, pointTo.X, pointTo.Y);
+                        };
+                        {
+                            Point pointFrom = PixelsToScreen(DegreesToPixels(mo.Points[3]));
+                            Point pointTo = PixelsToScreen(DegreesToPixels(mo.Points[0]));
+                            Pen pen = new Pen(new SolidBrush(Color.White));
+                            pen.DashPattern = new float[] { 5, 5 };
+                            g.DrawLine(pen, pointFrom.X, pointFrom.Y, pointTo.X, pointTo.Y);
+                        };
+                    };
+                };
+            };
+        }
+
+        public delegate void AfterDraw(Graphics g, Rectangle rect);
+        public AfterDraw AfterMapDraw;        
+
         /// <summary>
         ///     Draw Map Vector Points
         /// </summary>
@@ -1371,6 +1783,25 @@ namespace NaviMapNet
             if (image != null && (!image.Size.IsEmpty))
                 g.DrawImage(image, pxl.X - size.Width / 2, pxl.Y - size.Height / 2);
         }
+
+        /// <summary>
+        ///     Draw Map Text
+        /// </summary>
+        /// <param name="g">Source Image</param>
+        /// <param name="point">Point</param>
+        /// <param name="size">Size in Pixels</param>
+        /// <param name="squared">is Squared</param>
+        /// <param name="color">Point Color</param>
+        /// <param name="image">Point Image</param>
+        private void DrawMapText(Graphics g, PointF point, Point offset, Font font, Brush brush, string Text)
+        {
+            PointF pxl = PixelsToScreen(DegreesToPixels(point));
+            pxl.X += offset.X;
+            pxl.Y += offset.Y;
+            g.DrawString(Text, font, brush, pxl);
+            //g.FillRectangle(new System.Drawing.SolidBrush(color), pxl.X - size.Width / 2, pxl.Y - size.Height / 2, size.Width, size.Height);            
+        }
+
         /// <summary>
         ///     Draw Vector Ellipse
         /// </summary>
@@ -1417,6 +1848,8 @@ namespace NaviMapNet
             g.DrawLines(pen, pointsLocal);
         }
 
+        // outroot keenrock woodplace
+
         /// <summary>
         ///     Draw Vector Polygon
         /// </summary>
@@ -1435,7 +1868,7 @@ namespace NaviMapNet
             g.DrawPolygon(pen, pp);
             g.FillPolygon(new SolidBrush(bodyColor), pp);
         }
-        #endregion        
+        #endregion
 
         #region GetTileUrlFor XYZ
         private string GetTileUrl(int x, int y, int z)
@@ -1450,11 +1883,14 @@ namespace NaviMapNet
                 return url;
             };
 
+            Random rnd = new Random();
+            string[] abs = new string[]{"a","b","c"};
             // если перекрытие не состоялось - включаем алгоритм
             string path = ImageSourceUrl_;
             path = path.Replace("{x}", x.ToString()).Replace("{y}", y.ToString()).Replace("{z}", z.ToString());
             path = path.Replace("{l}", TwoZ(z < 10 ? z - 4 : z - 10).ToString()).Replace("{r}", ToHex8(y).ToString()).Replace("{c}", ToHex8(x).ToString());
             path = path.Replace("{w}", ((x % 4) + (y % 4) * 4).ToString());
+            path = path.Replace("{s}", abs[rnd.Next(1,3)] );
             LastRequestedFile_ = path;
             return path;
         }
@@ -1467,6 +1903,120 @@ namespace NaviMapNet
             string res = val.ToString("X");
             while (res.Length < 8) res = "0" + res;
             return res;
+        }
+        #endregion
+
+        #region Selection Bounds
+        /// <summary>
+        ///     minx,miny,maxx,maxy
+        /// </summary>
+        public int[] SelectionBoundsMinMaxPixels
+        {
+            get
+            {
+                Point tl = TilesProjection.fromLLtoPixel(_selLayer[0][0].Points[0].Y, _selLayer[0][0].Points[0].X, ZoomID_);
+                Point br = TilesProjection.fromLLtoPixel(_selLayer[0][0].Points[2].Y, _selLayer[0][0].Points[2].X, ZoomID_);
+
+                return new int[] {tl.X, br.Y, br.X, tl.Y };
+            }
+        }
+        /// <summary>
+        ///     minx,miny,maxx,maxy
+        /// </summary>
+        public double[] SelectionBoundsMinMaxMeters
+        {
+            get
+            {
+                double[] d = SelectionBoundsMinMaxDegrees;
+                return new double[] { TilesProjection.lon2x_m(d[0]), TilesProjection.lat2y_m(d[1]), TilesProjection.lon2x_m(d[2]), TilesProjection.lat2y_m(d[3]) };
+            }
+        }
+        /// <summary>
+        ///     minx,miny,maxx,maxy
+        /// </summary>
+        public double[] SelectionBoundsMinMaxDegrees
+        {
+            get
+            {
+                return new double[] { _selLayer[0][0].Points[0].X, _selLayer[0][0].Points[2].Y, _selLayer[0][0].Points[2].X, _selLayer[0][0].Points[0].Y };
+            }
+        }
+        /// <summary>
+        ///     minx,miny,width,height
+        /// </summary>
+        public Rectangle SelectionBoundsRectPixels
+        {
+
+            get
+            {
+                int[] b = SelectionBoundsMinMaxPixels;
+                return new Rectangle(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+            }
+        }
+        /// <summary>
+        ///     minx,miny,width,height
+        /// </summary>
+        public RectangleF SelectionBoundsRectMeters
+        {
+
+            get
+            {
+                double[] b = SelectionBoundsMinMaxDegrees;
+                b[0] = TilesProjection.lon2x_m(b[0]);
+                b[1] = TilesProjection.lat2y_m(b[1]);
+                b[2] = TilesProjection.lon2x_m(b[2]);
+                b[3] = TilesProjection.lat2y_m(b[3]);
+                return new RectangleF((float)b[0], (float)b[1], (float)b[2] - (float)b[0], (float)b[3] - (float)b[1]);
+            }
+        }
+        /// <summary>
+        ///     minx,miny,width,height
+        /// </summary>
+        public RectangleF SelectionBoundsRectDegrees
+        {
+
+            get
+            {
+                double[] b = SelectionBoundsMinMaxDegrees;
+                return new RectangleF((float)b[0], (float)b[1], (float)b[2] - (float)b[0], (float)b[3] - (float)b[1]);
+            }
+        }
+        /// <summary>
+        ///     left-top,bottom-right
+        /// </summary>
+        public Point[] SelectionBoundsAreaPixels
+        {
+            get
+            {
+                int[] b = SelectionBoundsMinMaxPixels;
+                return new Point[] { new Point(b[0], b[3]), new Point(b[2], b[1]) };
+            }
+        }
+        /// <summary>
+        ///     left-top,bottom-right
+        /// </summary>
+        public PointF[] SelectionBoundsAreaMeters
+        {
+            get
+            {
+                double[] b = SelectionBoundsMinMaxDegrees;
+                b[0] = TilesProjection.lon2x_m(b[0]);
+                b[1] = TilesProjection.lat2y_m(b[1]);
+                b[2] = TilesProjection.lon2x_m(b[2]);
+                b[3] = TilesProjection.lat2y_m(b[3]);
+                return new PointF[] { new PointF((float)b[0], (float)b[3]), new PointF((float)b[2], (float)b[1]) };
+            }
+        }
+        /// <summary>
+        ///     left-top,bottom-right
+        /// </summary>
+        public PointF[] SelectionBoundsAreaDegrees
+        {
+            get
+            {
+                double[] b = SelectionBoundsMinMaxDegrees;
+                return new PointF[] { new PointF((float)b[0], (float)b[3]), new PointF((float)b[2], (float)b[1]) };
+            }
         }
         #endregion
 
@@ -1804,13 +2354,11 @@ namespace NaviMapNet
         }
         private void zoomLevels_MouseEnter(object sender, EventArgs e)
         {
-            this.Cursor = Cursors.Arrow;
+            this.Cursor = DefaultMapCursor_;
         }
         private void zoomLevels_MouseLeave(object sender, EventArgs e)
         {
-            if (MapTool_ == MapTools.mtShift) this.Cursor = DefaultMapCursor_;
-            if (MapTool_ == MapTools.mtZoomIn) this.Cursor = MapCursors.ZoomIn;
-            if (MapTool_ == MapTools.mtZoomOut) this.Cursor = MapCursors.ZoomOut;
+            ChangeKeyedMapCursor();
         }        
         private void zoomLevels_MouseMove(object sender, MouseEventArgs e)
         {
@@ -1912,8 +2460,9 @@ namespace NaviMapNet
             };
 
             System.Net.HttpWebRequest wr = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(Uri_url);
+            wr.UserAgent = "Mozilla/5.0 (Windows NT 5.1; rv:52.0) Gecko/20100101 Firefox/52.0";
             wr.Timeout = WebRequestTimeout;
-
+            //wr.Referer = "http://127.0.0.1/";
             try
             {
                 System.Net.WebResponse res = wr.GetResponse();
@@ -1929,19 +2478,88 @@ namespace NaviMapNet
             };
         }
 
+        /// <summary>
+        ///     Загрузка картинки
+        /// </summary>
+        /// <param name="url">URL</param>
+        /// <returns>Картинка</returns>
+        public static Image GetImageFromURL(string url, int WebRequestTimeout, Color notFoundTileColor, out bool isEmpty)
+        {
+            isEmpty = true;
+
+            Uri Uri_url = new Uri(url);
+
+            if (Uri_url.IsFile)
+            {
+                url = url.Replace(@"file:", @"\\");
+                url = url.Replace("/", @"\");
+                if (System.IO.File.Exists(url))
+                {
+                    isEmpty = false;
+                    return new Bitmap(url);
+                }
+                else
+                    return notFoundTileColor == Color.Transparent ? null : GetEmptyTile(notFoundTileColor);
+            };
+
+            System.Net.HttpWebRequest wr = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(Uri_url);
+            wr.UserAgent = "Mozilla/5.0 (Windows NT 5.1; rv:52.0) Gecko/20100101 Firefox/52.0";
+            wr.Timeout = WebRequestTimeout;
+            //wr.Referer = "http://127.0.0.1/";
+            try
+            {
+                System.Net.WebResponse res = wr.GetResponse();
+                System.IO.Stream sr = res.GetResponseStream();
+                Image im = Image.FromStream(res.GetResponseStream());
+                isEmpty = false;
+                return im;
+            }
+            catch (System.Net.WebException err)
+            {
+                return notFoundTileColor == Color.Transparent ? null : GetEmptyTile(notFoundTileColor);
+                //if (err.Status != System.Net.WebExceptionStatus.ProtocolError)
+                //    throw new System.Net.WebException(err.Message, err);
+            };
+        }  
+
         private void mapImage_MouseMove(object sender, MouseEventArgs e)
         {
             this.OnMouseMove(e);
         }
 
         private void mapImage_MouseClick(object sender, MouseEventArgs e)
-        {            
-            this.OnMouseClick(e);
+        {
+            if (MouseOverMap_)
+                this.OnMouseClick(e);
         }
 
         private void mapImage_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            this.OnMouseDoubleClick(e);
+            if (MouseOverMap_)
+                this.OnMouseDoubleClick(e);
+
+            //if ((!KeyDownAlt) && (!KeyDownControl) && (KeyDownShift) && (SelectionBoxIsVisible))
+            //{
+            //    Geometry.TPolygon p = new Geometry.TPolygon(_selLayer[0][0].Points);
+            //    Geometry.TPoint d = new Geometry.TPoint(MousePositionDegrees);
+            //    if (Geometry.PointInPolygon(d, p))
+            //        ClearSelectionBox();
+            //};
+
+            if (_ShowInfoOnDblClick && (!KeyDownAlt) && (!KeyDownControl) && (!KeyDownShift))
+            {
+                if (!SelectionBoxIsVisible)
+                    ShowAdditInfo();
+                else
+                {
+                    Geometry.TPolygon p = new Geometry.TPolygon(_selLayer[0][0].Points);
+                    Geometry.TPoint d = new Geometry.TPoint(MousePositionDegrees);
+                    if(Geometry.PointInPolygon(d, p))
+                        ShowSelectionInfo();
+                    else
+                        ShowAdditInfo();
+                };
+            };
         }
 
         private void mapImage_MouseHover(object sender, EventArgs e)
@@ -1951,12 +2569,14 @@ namespace NaviMapNet
 
         private void mapImage_MouseUp(object sender, MouseEventArgs e)
         {
-            this.OnMouseUp(e);
+            if (MouseOverMap_)
+                this.OnMouseUp(e);
         }
 
         private void mapImage_Click(object sender, EventArgs e)
         {
-            this.OnClick(e);
+            if (MouseOverMap_)
+                this.OnClick(e);
         }
 
         private void selMapType_SelectedIndexChanged(object sender, EventArgs e)
@@ -1966,6 +2586,637 @@ namespace NaviMapNet
                 ImageSourceService = (MapServices)selMapType.Items[selMapType.SelectedIndex];
             }
             catch { };
+        }
+        
+        private void btnCopyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            double lat = this.CenterDegreesLat;
+            double lon = this.CenterDegreesLon;
+            if (InputLatLon("Map Center", "Set Map Center to:", ref lat, ref lon) == DialogResult.OK)
+                this.CenterDegrees = new PointF((float)lon, (float)lat);            
+        }
+
+        private void reloadTilesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.ReloadMap();            
+        }
+
+        private void mttShift_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.MapTool = MapTools.mtShift;
+        }
+
+        private void mttZoomIn_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.MapTool = MapTools.mtZoomIn;
+        }
+
+        private void mttZoomOut_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.MapTool = MapTools.mtZoomOut;
+        }
+
+        private void getCursorLatLonToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            PointF pf = MouseDownDegrees;
+            PointF cf = CenterDegrees;
+            float dx = cf.X - pf.X;
+            float dy = cf.Y - pf.Y;
+            double[] ll = new double[] {pf.X, pf.Y };
+            if (InputLatLon("Map Click", "Map clicked at position:", ref ll[1], ref ll[0]) == DialogResult.OK)
+                CenterDegrees = new PointF((float)(ll[0] + dx), (float)(ll[1] + dy));
+        }
+
+        private void showCross_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.ShowCross = !this.ShowCross;
+        }
+
+        private void ShowZoomBtn_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.ShowScale = !this.ShowScale;
+        }
+
+        private void showZoomsBtn_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.ShowZooms = !this.ShowZooms;
+        }
+
+        private void ShowTileBorder_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.DrawTilesBorder = !this.DrawTilesBorder;
+            this.ReloadMap();
+        }
+
+        private void showXYZBtn_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.DrawTilesXYZ = !this.DrawTilesXYZ;
+            this.ReloadMap();
+        }
+
+        private void UseCacheBtn_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.UseDiskCache = !this.UseDiskCache;
+        }
+
+        private string _additClickInfoText = "";
+        public string AdditionalClickInfoText { get { return _additClickInfoText; } set { _additClickInfoText = value; } }
+        private string _additSelectionInfoText = "";
+        public string AdditionalSelectionInfoText { get { return _additSelectionInfoText; } set { _additSelectionInfoText = value; } }
+
+        private void showAddit_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            ShowAdditInfo();
+        }        
+
+        private void defMenu_Opening(object sender, CancelEventArgs e)
+        {
+           if (DefaultMenuOpening != null) DefaultMenuOpening(sender, e);
+        }
+
+        public void AddItemToDefaultMenu(ToolStripItem item)
+        {
+            if (item != null)
+            {
+                DOP.DropDownItems.Add(item);
+                DOP.Visible = true;
+            };
+        }
+
+        private void SelShiftArea(object sender, EventArgs e)
+        {                        
+            //PointF[] sara = SelectionBoundsAreaDegrees;
+
+            Point pCentSelScreen = this.PointToClient(mapImage.PointToScreen(new Point(Selabel.Left + Selabel.Width / 2, Selabel.Top + Selabel.Height / 2)));
+            pCentSelScreen.X = pCentSelScreen.X - Width / 2;
+            pCentSelScreen.Y = pCentSelScreen.Y - Height / 2;
+
+            Point mc = CenterPixels;
+            Point c = new Point(mc.X + pCentSelScreen.X, mc.Y + pCentSelScreen.Y);
+
+
+            int[] b = new int[] { c.X - Selabel.Width / 2, c.Y - Selabel.Height / 2, c.X + Selabel.Width / 2, c.Y + Selabel.Height / 2 };
+            double[] llmin = TilesProjection.fromPixelToLL(new double[] { b[0], b[3] }, ZoomID_);
+            double[] llmax = TilesProjection.fromPixelToLL(new double[] { b[2], b[1] }, ZoomID_);
+            PointF[] sara = new PointF[] { new PointF((float)llmin[0], (float)llmax[1]), new PointF((float)llmax[0], (float)llmin[1]) };
+
+            _selLayer[0][0].Points =  new PointF[] { new PointF(sara[0].X, sara[0].Y), new PointF(sara[1].X, sara[0].Y), new PointF(sara[1].X, sara[1].Y), new PointF(sara[0].X, sara[1].Y) };
+            _selLayer[0][0].Visible = true;
+            HSB.Visible = true;
+            hideSelBox.Visible = true;
+            selBoxInfo.Visible = true;
+            save2Shp.Visible = true;
+            Zoom2Sel.Visible = true;
+            this.DrawOnMapData();
+
+            if (SelectingMapArea != null) SelectingMapArea(sender, e);            
+        }
+
+        [Browsable(true)]
+        public EventHandler SelectingMapArea;
+        [Browsable(true)]
+        public EventHandler PreparingAdditionalPointInfo;
+        [Browsable(true)]
+        public EventHandler PreparingAdditionalSelectionInfo;
+        [Browsable(true)]
+        public System.ComponentModel.CancelEventHandler DefaultMenuOpening;    
+    
+        [Browsable(true)]
+        public bool ShowInfoOnDblClick { get { return _ShowInfoOnDblClick; } set { _ShowInfoOnDblClick = value; } }
+        private bool _ShowInfoOnDblClick = false;
+
+        public static DialogResult InputLatLon(string title, string promptText, ref double Lat, ref double Lon)
+        {
+            Form form = new Form();
+            Label label = new Label();
+            Label labelat = new Label();
+            Label labelon = new Label();
+            TextBox textBoxLat = new TextBox();
+            TextBox textBoxLon = new TextBox();
+            Button buttonOk = new Button();
+            Button buttonCancel = new Button();
+
+            form.Text = title;
+            label.Text = promptText;
+            labelat.Text = "Lat:";
+            labelon.Text = "Lon:";
+            textBoxLat.Text = Lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            textBoxLon.Text = Lon.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            textBoxLat.Validating += new CancelEventHandler(textBoxLat_Validating);
+            textBoxLon.Validating += new CancelEventHandler(textBoxLon_Validating);
+
+
+            buttonOk.Text = "OK";
+            buttonCancel.Text = "Отмена";
+            buttonOk.DialogResult = DialogResult.OK;
+            buttonCancel.DialogResult = DialogResult.Cancel;
+
+            label.SetBounds(10, 10, 372, 13);
+            labelat.SetBounds(10, 33, 40, 13);
+            labelon.SetBounds(10, 53, 40, 13);
+            textBoxLat.SetBounds(52, 30, 332, 20);
+            textBoxLon.SetBounds(52, 52, 332, 20);
+            buttonOk.SetBounds(228, 82, 75, 23);
+            buttonCancel.SetBounds(309, 82, 75, 23);
+
+            label.AutoSize = true;
+            textBoxLat.BorderStyle = BorderStyle.FixedSingle;
+            textBoxLat.Anchor = textBoxLat.Anchor | AnchorStyles.Right;
+            textBoxLon.BorderStyle = BorderStyle.FixedSingle;
+            textBoxLon.Anchor = textBoxLat.Anchor | AnchorStyles.Right;
+            buttonOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            buttonCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+
+            form.ClientSize = new Size(396, 117);
+            form.Controls.AddRange(new Control[] { label, labelat, labelon, textBoxLat, textBoxLon, buttonOk, buttonCancel });
+            form.ClientSize = new Size(260, form.ClientSize.Height);
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.StartPosition = FormStartPosition.CenterParent;
+            form.MinimizeBox = false;
+            form.MaximizeBox = false;
+            form.AcceptButton = buttonOk;
+            form.CancelButton = buttonCancel;
+
+            DialogResult dialogResult = form.ShowDialog();
+            double.TryParse(textBoxLat.Text.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out Lat);
+            double.TryParse(textBoxLon.Text.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out Lon);
+            return dialogResult;
+        }
+
+        private static void textBoxLon_Validating(object sender, CancelEventArgs e)
+        {
+            TextBox tb = (sender as TextBox);
+            tb.Text = LatLonParser.ToLon(tb.Text).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        private static void textBoxLat_Validating(object sender, CancelEventArgs e)
+        {
+            TextBox tb = (sender as TextBox);
+            tb.Text = LatLonParser.ToLat(tb.Text).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        public static DialogResult InputXYZ(string title, string promptText, ref int X, ref int Y, ref int Z)
+        {
+            Form form = new Form();
+            Label label = new Label();
+            Label labelX = new Label();
+            Label labelY = new Label();
+            Label labelZ = new Label();
+            TextBox textBoxX = new TextBox();
+            TextBox textBoxY = new TextBox();
+            TextBox textBoxZ = new TextBox();
+            Button buttonOk = new Button();
+            Button buttonCancel = new Button();
+
+            form.Text = title;
+            label.Text = promptText;
+            labelX.Text = "Tile X:";
+            labelY.Text = "Tile Y:";
+            labelZ.Text = "Zoom:";
+            textBoxX.Text = X.ToString();
+            textBoxY.Text = Y.ToString();
+            textBoxZ.Text = Z.ToString();
+
+
+            buttonOk.Text = "OK";
+            buttonCancel.Text = "Отмена";
+            buttonOk.DialogResult = DialogResult.OK;
+            buttonCancel.DialogResult = DialogResult.Cancel;
+
+            label.SetBounds(10, 10, 372, 13);
+            labelX.SetBounds(10, 33, 40, 13);
+            labelY.SetBounds(10, 53, 40, 13);
+            labelZ.SetBounds(10, 73, 40, 13);
+            textBoxX.SetBounds(52, 30, 332, 20);
+            textBoxY.SetBounds(52, 52, 332, 20);
+            textBoxZ.SetBounds(52, 74, 332, 20);
+            buttonOk.SetBounds(228, 106, 75, 23);
+            buttonCancel.SetBounds(309, 106, 75, 23);
+
+            label.AutoSize = true;
+            textBoxX.BorderStyle = BorderStyle.FixedSingle;
+            textBoxX.Anchor = textBoxX.Anchor | AnchorStyles.Right;
+            textBoxY.BorderStyle = BorderStyle.FixedSingle;
+            textBoxY.Anchor = textBoxX.Anchor | AnchorStyles.Right;
+            textBoxZ.BorderStyle = BorderStyle.FixedSingle;
+            textBoxZ.Anchor = textBoxX.Anchor | AnchorStyles.Right;
+            buttonOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            buttonCancel.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+
+            form.ClientSize = new Size(396, 139);
+            form.Controls.AddRange(new Control[] { label, labelX, labelY, labelZ, textBoxX, textBoxY, textBoxZ, buttonOk, buttonCancel });
+            form.ClientSize = new Size(260, form.ClientSize.Height);
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.StartPosition = FormStartPosition.CenterParent;
+            form.MinimizeBox = false;
+            form.MaximizeBox = false;
+            form.AcceptButton = buttonOk;
+            form.CancelButton = buttonCancel;
+
+            DialogResult dialogResult = form.ShowDialog();
+            int.TryParse(textBoxX.Text.Trim(), out X);
+            int.TryParse(textBoxY.Text.Trim(), out Y);
+            int.TryParse(textBoxZ.Text.Trim(), out Z);
+            return dialogResult;
+        }
+
+        public static DialogResult ShowAdditionalInfoDialog(string title, string prompt, string text)
+        {           
+            Form form = new Form();
+            Label label = new Label();
+            TextBox textBox = new TextBox();
+            Button buttonOk = new Button();
+
+            form.Text = title;
+            label.Text = prompt;
+            label.Font = new Font(label.Font, FontStyle.Bold);
+            textBox.Multiline = true;
+            textBox.Text = text;
+            textBox.ScrollBars = ScrollBars.Both;
+            textBox.ReadOnly = true;
+            //textBox.BackColor = Color.White;
+            textBox.BorderStyle = BorderStyle.None;
+
+            buttonOk.Text = "OK";
+            buttonOk.DialogResult = DialogResult.OK;
+
+            label.SetBounds(8, 10, 372, 13);
+            textBox.SetBounds(12, 30, 478, 284);
+            buttonOk.SetBounds(218, 325, 75, 24);
+
+            label.AutoSize = true;
+            textBox.Anchor = textBox.Anchor | AnchorStyles.Right;
+            buttonOk.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+
+            form.ClientSize = new Size(500, 360);
+            form.Controls.AddRange(new Control[] { label, textBox, buttonOk });
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.StartPosition = FormStartPosition.CenterParent;
+            form.MinimizeBox = false;
+            form.MaximizeBox = false;
+            form.AcceptButton = buttonOk;
+            form.ActiveControl = buttonOk;
+
+            form.DialogResult = DialogResult.Cancel;
+            DialogResult dialogResult = form.ShowDialog();
+            return dialogResult;
+        }
+
+        private void Selabel_Paint(object sender, PaintEventArgs e)
+        {
+            ControlPaint.DrawBorder(e.Graphics, Selabel.DisplayRectangle, Color.White, ButtonBorderStyle.Solid);
+        }
+
+        private void hideSelBox_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            ClearSelectionBox();
+        }
+
+        private void selBoxInfo_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            ShowSelectionInfo();
+        }
+
+        private void ShowAdditInfo()
+        {
+            if (PreparingAdditionalPointInfo != null) PreparingAdditionalPointInfo(this, new EventArgs());
+
+            PointF pcenter = this.CenterDegrees;
+            PointF pclick = this.MouseDownDegrees;
+            Point xyclick = this.MouseDownPixels; xyclick.X /= 256; xyclick.Y /= 256;
+
+            string txt = "";
+            txt += String.Format("Центр карты, широта: {0}\r\n", pcenter.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Центр карты, долгота: {0}\r\n", pcenter.X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";
+            txt += String.Format("Точка клика, широта: {0}\r\n", pclick.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Точка клика, долгота: {0}\r\n", pclick.X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";
+            txt += String.Format("Точка клика, X тайла: {0}\r\n", xyclick.X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Точка клика, Y тайла: {0}\r\n", xyclick.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Точка клика, Z тайла: {0}\r\n", this.ZoomID.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";
+            //////
+            PointF pf = tile2location(xyclick.X, xyclick.Y, ZoomID_);
+            txt += String.Format("Тайл клика, Top-Left: {0} {1}\r\n", new object[] { pf.Y.ToString(System.Globalization.CultureInfo.InvariantCulture), pf.X.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            pf = tile2location(xyclick.X + 0.5, xyclick.Y + 0.5, ZoomID_);
+            txt += String.Format("Тайл клика, Центр: {0} {1}\r\n", new object[] { pf.Y.ToString(System.Globalization.CultureInfo.InvariantCulture), pf.X.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            //////
+            txt += "\r\n";
+            txt += String.Format("Точка клика, источник: {0}\r\n", GetTileUrl(xyclick.X, xyclick.Y, this.ZoomID));
+            txt += "\r\n";
+
+            if (PreparingAdditionalPointInfo != null) 
+                if (!String.IsNullOrEmpty(_additClickInfoText)) 
+                    txt += _additClickInfoText;
+
+            ShowAdditionalInfoDialog("Информация", "Вспомогательная информация по точке:", txt);
+        }
+
+        private static System.Drawing.PointF tile2location(double x, double y, int zoom)
+        {
+            double Lng = ((x * 256) - (256 * Math.Pow(2, zoom - 1))) / ((256 * Math.Pow(2, zoom)) / 360);
+            while (Lng > 180) Lng -= 360;
+            while (Lng < -180) Lng += 360;
+
+            double exp = ((y * 256) - (256 * Math.Pow(2, zoom - 1))) / ((-256 * Math.Pow(2, zoom)) / (2 * Math.PI));
+            double Lat = ((2 * Math.Atan(Math.Exp(exp))) - (Math.PI / 2)) / (Math.PI / 180);
+            if (Lat < -90) Lat = -90;
+            if (Lat > 90) Lat = 90;
+
+            return new System.Drawing.PointF((float)Lng, (float)Lat);
+        }
+
+
+        private void ShowSelectionInfo()
+        {
+            if (PreparingAdditionalSelectionInfo != null) PreparingAdditionalSelectionInfo(this, new EventArgs());
+
+            PointF pcenter = this.CenterDegrees;
+            PointF[] area = SelectionBoundsAreaDegrees;
+            
+            string txt = "";
+            txt += String.Format("Центр карты, широта: {0}\r\n", pcenter.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Центр карты, долгота: {0}\r\n", pcenter.X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";
+            txt += String.Format("Зона выделения, центр: {0} {1}\r\n", ((area[0].Y+area[1].Y)/2).ToString(System.Globalization.CultureInfo.InvariantCulture), ((area[0].X+area[1].X)/2).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";
+            txt += String.Format("Зона выделения, лево: {0}\r\n", area[0].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, верх: {0}\r\n", area[0].Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, право: {0}\r\n", area[1].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, низ: {0}\r\n", area[1].Y.ToString(System.Globalization.CultureInfo.InvariantCulture));                        
+            txt += "\r\n";
+            txt += String.Format("Зона выделения, лево-верх: {0} {1}\r\n", area[0].Y.ToString(System.Globalization.CultureInfo.InvariantCulture), area[0].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, право-низ: {0} {1}\r\n", area[1].Y.ToString(System.Globalization.CultureInfo.InvariantCulture), area[1].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";                                    
+
+            Int64 ttlx = 0;
+            Int64 ttly = 0;
+            Int64 ttla = 0;
+            for (int i = MapMinZoom_; i <= MapMaxZoom_; i++)
+            {
+                Point ts = location2tile(area[0].Y, area[0].X, i);
+                Point te = location2tile(area[1].Y, area[1].X, i);
+                int tx = (int)(Math.Abs(te.X - ts.X) + 1);
+                int ty = (int)(Math.Abs(te.Y - ts.Y) + 1);
+                txt += String.Format("Зона выделения, Зум {0}, Тайлов по: X - {1}, Y - {2}, Всего - {3}\r\n", new object[] { i, tx, ty, tx * ty });
+                ttlx += tx;
+                ttly += ty;
+                ttla += tx * ty;
+            };
+            txt += String.Format("Зона выделения, Все зумы, Тайлов по: X - {1}, Y - {2}, Всего - {3}\r\n", new object[] { 0, ttlx, ttly, ttla });
+            txt += "\r\n";
+
+            double WiMin = GetLengthMetersC(area[0].X, area[0].Y, area[1].X, area[0].Y, false) / 1000.0;
+            double WiMax = GetLengthMetersC(area[0].X, area[1].Y, area[1].X, area[1].Y, false) / 1000.0;
+            double He = GetLengthMetersC(area[0].X, area[0].Y, area[0].X, area[1].Y, false) / 1000.0;
+            double Pe = WiMin + WiMax + 2 * He;
+            double Sq = (WiMin + WiMin) * He / 2;
+            txt += String.Format("Зона выделения, Ширина мин: {0} км\r\n", WiMin.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, Ширина макс: {0} км\r\n", WiMax.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, Высота: {0} км\r\n", He.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, Периметр: {0} км\r\n", Pe.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, Площадь: {0} кв км\r\n", Sq.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
+            txt += "\r\n";
+
+            if (PreparingAdditionalSelectionInfo != null) 
+                if (!String.IsNullOrEmpty(_additSelectionInfoText)) 
+                    txt += _additSelectionInfoText;
+            
+            ShowAdditionalInfoDialog("Информация", "Вспомогательная информация по области выделения:", txt);
+        }
+
+        public static System.Drawing.Point location2tile(double lat, double lon, int zoom)
+        {
+            if (System.Math.Abs(lat) > 85.0511287798066) return new System.Drawing.Point(0, 0);
+
+            double sin_phi = System.Math.Sin(lat * System.Math.PI / 180);
+            double norm_x = lon / 180;
+            double norm_y = (0.5 * System.Math.Log((1 + sin_phi) / (1 - sin_phi))) / System.Math.PI;
+            return new System.Drawing.Point((int)(System.Math.Pow(2, zoom) * ((norm_x + 1) / 2)), (int)(System.Math.Pow(2, zoom) * ((1 - norm_y) / 2)));
+        }
+
+        private void save2Shp_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.DefaultExt = ".shp";
+            sfd.Filter = "ESRI Shape Files (*.shp)|*.shp";
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                PointF[] points = _selLayer[0][0].Points;
+                RectToFile(sfd.FileName, points[0], points[2]);
+            };
+            sfd.Dispose();
+        }
+
+        public static byte[] Convert(byte[] ba, bool bigEndian)
+        {
+            if (BitConverter.IsLittleEndian != bigEndian) Array.Reverse(ba);
+            return ba;
+        }
+
+        public static void RectToFile(string filename, PointF tleft, PointF bright)
+        {
+            double xmin = Math.Min(tleft.X, bright.X);
+            double ymin = Math.Min(tleft.Y, bright.Y);
+            double xmax = Math.Max(tleft.X, bright.X);
+            double ymax = Math.Max(tleft.Y, bright.Y);
+
+            List<byte> header = new List<byte>();
+            header.AddRange(Convert(BitConverter.GetBytes((int)9994), false)); // File Code
+            header.AddRange(new byte[20]);                                     // Not used
+            header.AddRange(Convert(BitConverter.GetBytes((int)110), false));  // File_Length / 2
+            header.AddRange(Convert(BitConverter.GetBytes((int)1000), true));  // Version 1000
+            header.AddRange(Convert(BitConverter.GetBytes((int)5), true));     // Polygon Type
+            header.AddRange(Convert(BitConverter.GetBytes((double)xmin), true));
+            header.AddRange(Convert(BitConverter.GetBytes((double)ymin), true));
+            header.AddRange(Convert(BitConverter.GetBytes((double)xmax), true));
+            header.AddRange(Convert(BitConverter.GetBytes((double)ymax), true));
+            header.AddRange(new byte[32]); // end of header
+
+            header.AddRange(Convert(BitConverter.GetBytes((int)1), false)); // rec number
+            header.AddRange(Convert(BitConverter.GetBytes((int)56), false));// rec_length / 2
+
+            header.AddRange(Convert(BitConverter.GetBytes((int)5), true)); // rec type polygon
+            header.AddRange(Convert(BitConverter.GetBytes((double)xmin), true));
+            header.AddRange(Convert(BitConverter.GetBytes((double)ymin), true));
+            header.AddRange(Convert(BitConverter.GetBytes((double)xmax), true));
+            header.AddRange(Convert(BitConverter.GetBytes((double)ymax), true));
+            header.AddRange(Convert(BitConverter.GetBytes((int)1), true)); // 1 part
+            header.AddRange(Convert(BitConverter.GetBytes((int)4), true)); // 4 points
+            header.AddRange(Convert(BitConverter.GetBytes((int)0), true)); // start at 0 point
+
+            header.AddRange(Convert(BitConverter.GetBytes((double)tleft.X), true));  // point 0 x
+            header.AddRange(Convert(BitConverter.GetBytes((double)tleft.Y), true));  // point 0 y
+            header.AddRange(Convert(BitConverter.GetBytes((double)bright.X), true)); // point 1 x
+            header.AddRange(Convert(BitConverter.GetBytes((double)tleft.Y), true));  // point 1 y
+            header.AddRange(Convert(BitConverter.GetBytes((double)bright.X), true)); // point 2 x
+            header.AddRange(Convert(BitConverter.GetBytes((double)bright.Y), true)); // point 2 y
+            header.AddRange(Convert(BitConverter.GetBytes((double)tleft.X), true));  // point 3 x
+            header.AddRange(Convert(BitConverter.GetBytes((double)bright.Y), true)); // point 3 y
+
+            FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
+            fs.Write(header.ToArray(), 0, header.Count);
+            fs.Close();
+        }
+
+        private void saveBoundsShapeToolStripMenuItem_Click(object sender, EventArgs e)
+        {            
+            BreakNext = false;
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.DefaultExt = ".shp";
+            sfd.Filter = "ESRI Shape Files (*.shp)|*.shp";
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                PointF[] points = MapBoundsAreaDegrees;
+                RectToFile(sfd.FileName, points[0], points[1]);
+            };
+            sfd.Dispose();
+        }
+
+        private void saveMapImgToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.DefaultExt = ".png";
+            sfd.Filter = "Portable Network Graphics (*.png)|*.png";
+            if (sfd.ShowDialog() == DialogResult.OK)
+                this.ImagePNG.Save(sfd.FileName);
+            return;
+        }
+
+        private void openCacheFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            try
+            {
+                System.Diagnostics.Process.Start(NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\CACHE\" + ((int)ImageSourceService_).ToString("X8"));
+            }
+            catch { };
+        }
+
+        private void setMapXYZToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            int x = CenterPixelsX / 256;
+            int y = CenterPixelsY / 256;
+            int z = ZoomID_;
+            if (InputXYZ("Map Center", "Set Map Center to:", ref x, ref y, ref z) == DialogResult.OK)
+            {
+                if ((z > 0) && (z < 22))
+                {
+                    PointF c = tile2location(x + 0.5, y + 0.5, z);
+                    CenterLat_ = c.Y;
+                    CenterLon_ = c.X;
+                    ZoomID_ = (byte)z;
+                    ReloadMap();
+                };
+            };
+        }
+
+        private void openExternalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+
+            PointF pcenter = this.CenterDegrees;
+            PointF pclick = this.MouseDownDegrees;
+            Point xyclick = this.MouseDownPixels; xyclick.X /= 256; xyclick.Y /= 256;
+
+            string url = GetTileUrl(xyclick.X, xyclick.Y, this.ZoomID);
+
+            BreakNext = false;
+            try
+            {
+                System.Diagnostics.Process.Start(url);
+            }
+            catch { };
+        }
+
+        private void Zoom2Sel_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            ZoomByArea(SelectionBoundsMinMaxDegrees);
+        }
+
+        private void NaviMapNetViewer_Load(object sender, EventArgs e)
+        {
+            labelLoading.Parent = this;
+        }
+
+
+        private bool _mouseIsOver = false;
+        private void NaviMapNetViewer_MouseEnter(object sender, EventArgs e)
+        {
+            _mouseIsOver = true;
+        }
+
+        private void NaviMapNetViewer_MouseLeave(object sender, EventArgs e)
+        {
+            _mouseIsOver = false;
+            KeyDownAlt = false;
+            KeyDownControl = false;
+            KeyDownShift = false;
+        }
+
+        private void вернутьсяВНормальныйРежимToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            BreakNext = false;
         }
     }
 
@@ -1977,6 +3228,7 @@ namespace NaviMapNet
         const int WM_MOUSEMOVE = 0x0200;
         const int WM_LBUTTONDOWN = 0x0201;
         const int WM_LBUTTONUP = 0x0202;
+        const int WM_RBUTTONDOWN = 0x0204;
         const int WM_RBUTTONUP = 0x0205;
 
         public bool PreFilterMessage(ref Message m)
@@ -1987,17 +3239,17 @@ namespace NaviMapNet
                 MouseMove(null, new MouseEventArgs(
                     MouseButtons.None, 0, mousePosition.X, mousePosition.Y, 0));
             };
-            if (m.Msg == WM_LBUTTONDOWN)
+            if ((m.Msg == WM_LBUTTONDOWN) || (m.Msg == WM_RBUTTONDOWN))
             {
                 Point mousePosition = Control.MousePosition;
                 MouseDown(null, new MouseEventArgs(
-                    MouseButtons.None, 0, mousePosition.X, mousePosition.Y, 0));
+                    m.Msg == WM_LBUTTONUP ? MouseButtons.Left : MouseButtons.Right, 0, mousePosition.X, mousePosition.Y, 0));
             };
             if ((m.Msg == WM_LBUTTONUP) || (m.Msg == WM_RBUTTONUP))
             {
                 Point mousePosition = Control.MousePosition;
                 MouseUp(null, new MouseEventArgs(
-                    MouseButtons.None, 0, mousePosition.X, mousePosition.Y, 0));
+                    m.Msg == WM_LBUTTONUP ? MouseButtons.Left : MouseButtons.Right, 0, mousePosition.X, mousePosition.Y, 0));
             };
             return false;
         }
@@ -2458,9 +3710,19 @@ namespace NaviMapNet
         public bool DrawTileBorder = false;
         public short TilesRenderingZoneSize = 0;
 
+        private bool _invertBackground = false;
+        public bool InvertBackground { get { return _invertBackground; } set { _invertBackground = value; } }
+
+        private bool _useDiskCache = false;
+        public bool UseDiskCache { get { return _useDiskCache; } set { _useDiskCache = value; } }
+
+        private string _CacheSubDirectory = "";
+        public string CacheSubDirectory { get { return _CacheSubDirectory; } set { _CacheSubDirectory = value; if (_CacheSubDirectory == "") _CacheSubDirectory = ""; } }
+
 
         public MapMerger()
         {
+            System.Net.ServicePointManager.DefaultConnectionLimit = 100;
             CalcGeo();
         }        
 
@@ -2551,14 +3813,57 @@ namespace NaviMapNet
 
             Center_Tile_XPos = (int)(Width / 2 - (256.0 * ((mLon - left) / (right - left))));
             Center_Tile_YPos = (int)(Height / 2 - (256.0 * ((mLat - top) / (bottom - top))));
-        }             
+        }
 
+        private string CacheDir = NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\CACHE\";
         private Image GetTile(int x, int y, int z)
         {
+            bool cached = false;
+            return GetTile(x, y, z, out cached);
+        }
+        private Image GetTile(int x, int y, int z, out bool cached)
+        {
+            cached = false;
             string url = "";
-            if(GetTilePath != null) url = GetTilePath(x, y, z);            
+            if (GetTilePath != null) url = GetTilePath(x, y, z);
+            if (_useDiskCache)
+            {
+                string fn = CacheDir + _CacheSubDirectory + @"\" + z.ToString() + @"\" + y.ToString() + @"\" + x.ToString() + ".png";
+                try
+                {
+                    string dir = Path.GetDirectoryName(fn);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
+                }
+                catch { };
+                if (!File.Exists(fn))
+                {
+                    Image im = null;
+                    bool isEmpty = true;
+                    try
+                    {                        
+                        im = NaviMapNetViewer.GetImageFromURL(url, WebRequestTimeout_, NotFoundTileColor_, out isEmpty);
+                    }
+                    catch { };
+                    if ((im != null) && (!isEmpty)) try { im.Save(fn); }
+                        catch { };
+                    return im;
+                }
+                else
+                {
+                    try
+                    {
+                        cached = true;
+                        return Image.FromFile(fn);
+                    }
+                    catch
+                    {
+                        return null;
+                    };
+                };
+            };
             return NaviMapNetViewer.GetImageFromURL(url, WebRequestTimeout_, NotFoundTileColor_);
-        }        
+        }       
 
         private double[] ZoomsDLon = GetZoomsDLon();
         private static double[] GetZoomsDLon()
@@ -2659,6 +3964,22 @@ namespace NaviMapNet
             return res.ToArray();
         }
 
+        private Image InvertImage(Image im)
+        {
+            if (im == null) return null;
+            Bitmap pic = new Bitmap(im);
+            for (int y = 0; (y <= (pic.Height - 1)); y++)
+            {
+                for (int x = 0; (x <= (pic.Width - 1)); x++)
+                {
+                    Color inv = pic.GetPixel(x, y);
+                    inv = Color.FromArgb(255, (255 - inv.R), (255 - inv.G), (255 - inv.B));
+                    pic.SetPixel(x, y, inv);
+                }
+            }
+            return pic;
+        }
+
         public Image GetMap()
         {
             Image im = new Bitmap(Width, Height);
@@ -2695,7 +4016,9 @@ namespace NaviMapNet
                     {
                         try
                         {
-                            Image img = GetTile(curx, y, mZoom);
+                            bool cached = false;
+                            Image img = GetTile(curx, y, mZoom, out cached);
+                            if(InvertBackground) img = InvertImage(img);
                             if (img != null)
                                 g.DrawImage(img, curdrawx, drawy, 256, 256);
                             if (DrawTileXYZ)
@@ -2704,6 +4027,14 @@ namespace NaviMapNet
                                 g.DrawString(txt, f, b, curdrawx + 2, drawy + 2);
                                 g.DrawLine(p, curdrawx, drawy, curdrawx + 8, drawy);
                                 g.DrawLine(p, curdrawx, drawy, curdrawx, drawy + 8);
+                                //
+                                if (cached)
+                                {
+                                    txt = "cached";
+                                    g.DrawString(txt, f, new SolidBrush(Color.Maroon), curdrawx + 2, drawy + f.Height + 4);
+                                    g.DrawLine(p, curdrawx, drawy, curdrawx + 8, drawy);
+                                    g.DrawLine(p, curdrawx, drawy, curdrawx, drawy + 8);
+                                };
                             };
                             if (DrawTileBorder)
                             {
@@ -2744,6 +4075,6 @@ namespace NaviMapNet
             };
 
             return im;
-        }
+        }        
     }
 }

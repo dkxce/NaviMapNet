@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("NaviMapNet")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("dkxce Home Studio")]
+[assembly: AssemblyCompany("milokz@gmail.com")]
 [assembly: AssemblyProduct("NaviMapNet")]
-[assembly: AssemblyCopyright("Copyright © dkxce Home Studio 2015")]
+[assembly: AssemblyCopyright("Copyright © milokz@gmail.com 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("19.10.6.17")]
+[assembly: AssemblyFileVersion("19.10.6.17")]

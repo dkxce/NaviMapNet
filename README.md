@@ -4,3 +4,4 @@ to use in application forms
 support overlay: points, lines, polygons
 
 <img src="window.png"/>
+<img src="window2.png"/>

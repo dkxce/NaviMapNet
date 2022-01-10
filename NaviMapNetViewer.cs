@@ -146,6 +146,7 @@ namespace NaviMapNet
             OSM_HOT = 0x13,
             
             Rosreestr = 0x06,
+            Custom_MBTiles = 0xFC,
             Custom_LocalFiles = 0xFD,
             Custom_LocalHost_WMS7759 = 0x0FE,
             Custom_UserDefined = 0xFF
@@ -243,6 +244,12 @@ namespace NaviMapNet
                     ImageSourceUrl_ = "http://c.maps.rosreestr.ru/ArcGIS/rest/services/BaseMaps/BaseMap/MapServer/tile/{z}/{y}/{x}";
                     ReloadMap();
                 };
+                if (value == MapServices.Custom_MBTiles)
+                {
+                    ImageSourceType_ = ImageSourceTypes.tiles;
+                    ImageSourceUrl_ = NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\CACHE\default.mbtiles";
+                    ReloadMap();
+                };
                 if (value == MapServices.Custom_LocalFiles)
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
@@ -302,10 +309,8 @@ namespace NaviMapNet
         ///     {w} - wikimapia server replacement
         ///     {s} - a/b/c replacement
         /// </summary>
-        public string ImageSourceUrl { get { return ImageSourceUrl_; } set { 
-            if ((ImageSourceService_ != MapServices.Custom_UserDefined) &&
-                (ImageSourceService_ != MapServices.Custom_LocalFiles)
-                )return; 
+        public string ImageSourceUrl { get { return ImageSourceUrl_; } set {
+            if ((ImageSourceService_ != MapServices.Custom_UserDefined) && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (ImageSourceService_ != MapServices.Custom_MBTiles)) return;
             ImageSourceUrl_ = value; ReloadMap();
         } }
         #endregion
@@ -1058,6 +1063,7 @@ namespace NaviMapNet
             selMapType.Items.Add(MapServices.OSM_HOT);
             selMapType.Items.Add(MapServices.Rosreestr);
             // selMapType.Items.Add(MapServices.Custom_LocalHost_WMS7759);
+            selMapType.Items.Add(MapServices.Custom_MBTiles);
             selMapType.Items.Add(MapServices.Custom_LocalFiles);
             selMapType.Items.Add(MapServices.Custom_UserDefined);
             selMapType.Text = ImageSourceService_.ToString();
@@ -1610,7 +1616,7 @@ namespace NaviMapNet
                 MapMerger mm = new MapMerger();
                 mm.InvertBackground = this.InvertBackground;                
                 mm.CacheSubDirectory = String.IsNullOrEmpty(_UserDefinedMapName) ? ((int)ImageSourceService_).ToString("X8") : _UserDefinedMapName;
-                mm.UseDiskCache = this.UseDiskCache && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (mm.CacheSubDirectory != (0xFF).ToString("X8"));
+                mm.UseDiskCache = this.UseDiskCache && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (ImageSourceService_ != MapServices.Custom_MBTiles) && (mm.CacheSubDirectory != (0xFF).ToString("X8"));
                 mm.MinZoom = this.TilesMinZoom_;
                 mm.MaxZoom = this.TilesMaxZoom_;
                 mm.WebRequestTimeout = WebRequestTimeout_;
@@ -1622,6 +1628,7 @@ namespace NaviMapNet
                 double[] bounds = MapBoundsMinMaxOversizeDegrees;
                 labelLoading.Visible = true;
                 labelLoading.Refresh();
+                mm.isMBTiles = ImageSourceService_ == MapServices.Custom_MBTiles;
                 mapImage.Image = mm.GetMap(bounds[1], bounds[0], bounds[3], bounds[2], true, this.OversizeWidth, this.OversizeHeight);
                 labelLoading.Visible = false;
                 mapImage.Left = 0;
@@ -3709,6 +3716,7 @@ namespace NaviMapNet
         public bool DrawTileXYZ = false;
         public bool DrawTileBorder = false;
         public short TilesRenderingZoneSize = 0;
+        public bool isMBTiles = false;
 
         private bool _invertBackground = false;
         public bool InvertBackground { get { return _invertBackground; } set { _invertBackground = value; } }
@@ -3824,6 +3832,7 @@ namespace NaviMapNet
         private Image GetTile(int x, int y, int z, out bool cached)
         {
             cached = false;
+            if (isMBTiles) return GetMBTile(x, y, z, GetTilePath(x, y, z));
             string url = "";
             if (GetTilePath != null) url = GetTilePath(x, y, z);
             if (_useDiskCache)
@@ -3863,7 +3872,39 @@ namespace NaviMapNet
                 };
             };
             return NaviMapNetViewer.GetImageFromURL(url, WebRequestTimeout_, NotFoundTileColor_);
-        }       
+        }
+
+        private object MBTilesSQLConn = null;
+        private Image GetMBTile(int x, int y, int z, string fName)
+        {
+            if (MBTilesSQLConn == null) MBTilesSQLConn = new System.Data.SQLite.SQLiteConnection();
+            System.Data.SQLite.SQLiteConnection sqlc = (System.Data.SQLite.SQLiteConnection)MBTilesSQLConn;
+
+            string connstr = @"Data Source=" + fName + ";Version=3;";            
+            if (sqlc.ConnectionString != connstr) { sqlc.Close(); sqlc.ConnectionString = connstr; };
+
+            try
+            {
+                byte[] res = null;
+                if (sqlc.State == ConnectionState.Closed) sqlc.Open();
+                System.Data.SQLite.SQLiteCommand sql = new System.Data.SQLite.SQLiteCommand("", sqlc);
+                sql.CommandText = String.Format("SELECT TILE_DATA FROM TILES WHERE ZOOM_LEVEL = {0} AND TILE_COLUMN = {1} AND TILE_ROW = {2}", z, x, Math.Pow(2, z) - 1 - y);
+                System.Data.SQLite.SQLiteDataReader dr = sql.ExecuteReader();
+                if ((dr != null) && (dr.Read())) res = (byte[])dr[0];
+                dr.Close();
+                if(res != null) return byteArrayToImage(res);
+            }
+            catch { }
+            return NaviMapNetViewer.GetEmptyTile(Color.Transparent);
+        }
+
+        private Image byteArrayToImage(byte[] byteArrayIn)
+        {
+            MemoryStream ms = new MemoryStream(byteArrayIn);
+            ms.Position = 0;
+            Image returnImage = Image.FromStream(ms);
+            return returnImage;
+        }
 
         private double[] ZoomsDLon = GetZoomsDLon();
         private static double[] GetZoomsDLon()

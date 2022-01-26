@@ -12,6 +12,16 @@ namespace NaviMapNet
 {
     public partial class NaviMapNetViewer : UserControl
     {
+        static NaviMapNetViewer()
+        {
+            try
+            {
+                if (IntPtr.Size == 4) File.Copy(NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\SQLite.Interop.x86.dll", NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\SQLite.Interop.dll", true);
+                else File.Copy(NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\SQLite.Interop.x64.dll", NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\SQLite.Interop.dll", true);
+            }
+            catch (Exception ex) { };
+        }
+
         private MouseEventHandler mv;
         private MouseEventHandler md;
         private MouseEventHandler mu;

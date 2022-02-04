@@ -54,6 +54,8 @@ namespace NaviMapNet
             this.ShowZoomBtn = new System.Windows.Forms.ToolStripMenuItem();
             this.ShowZoomsBtn = new System.Windows.Forms.ToolStripMenuItem();
             this.ShowCrossBtn = new System.Windows.Forms.ToolStripMenuItem();
+            this.showAzC = new System.Windows.Forms.ToolStripMenuItem();
+            this.showAzM = new System.Windows.Forms.ToolStripMenuItem();
             this.ShowTileBorderBtn = new System.Windows.Forms.ToolStripMenuItem();
             this.ShowXYZBtn = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
@@ -64,11 +66,11 @@ namespace NaviMapNet
             this.saveBoundsShapeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.ShowReloadTilesBtn = new System.Windows.Forms.ToolStripMenuItem();
+            this.DOP = new System.Windows.Forms.ToolStripMenuItem();
             this.labelLoading = new System.Windows.Forms.Label();
             this.scaleImage = new System.Windows.Forms.PictureBox();
             this.crossImage = new System.Windows.Forms.PictureBox();
             this.zoomLevels = new System.Windows.Forms.PictureBox();
-            this.DOP = new System.Windows.Forms.ToolStripMenuItem();
             this.imagePanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mapImage)).BeginInit();
             this.defMenu.SuspendLayout();
@@ -114,6 +116,7 @@ namespace NaviMapNet
             this.mapImage.MouseClick += new System.Windows.Forms.MouseEventHandler(this.mapImage_MouseClick);
             this.mapImage.MouseDown += new System.Windows.Forms.MouseEventHandler(this.mapImage_MouseDown);
             this.mapImage.MouseHover += new System.EventHandler(this.mapImage_MouseHover);
+            this.mapImage.Paint += new System.Windows.Forms.PaintEventHandler(this.mapImage_Paint);
             this.mapImage.MouseUp += new System.Windows.Forms.MouseEventHandler(this.mapImage_MouseUp);
             this.mapImage.MouseEnter += new System.EventHandler(this.mapImage_MouseEnter);
             // 
@@ -149,6 +152,8 @@ namespace NaviMapNet
             this.ShowZoomBtn,
             this.ShowZoomsBtn,
             this.ShowCrossBtn,
+            this.showAzC,
+            this.showAzM,
             this.ShowTileBorderBtn,
             this.ShowXYZBtn,
             this.toolStripMenuItem3,
@@ -161,7 +166,7 @@ namespace NaviMapNet
             this.ShowReloadTilesBtn,
             this.DOP});
             this.defMenu.Name = "defMenu";
-            this.defMenu.Size = new System.Drawing.Size(328, 546);
+            this.defMenu.Size = new System.Drawing.Size(328, 590);
             this.defMenu.Opening += new System.ComponentModel.CancelEventHandler(this.defMenu_Opening);
             // 
             // btnCopyToolStripMenuItem
@@ -312,6 +317,20 @@ namespace NaviMapNet
             this.ShowCrossBtn.Text = "Отображать перекрестие в центре карты";
             this.ShowCrossBtn.Click += new System.EventHandler(this.showCross_Click);
             // 
+            // showAzC
+            // 
+            this.showAzC.Name = "showAzC";
+            this.showAzC.Size = new System.Drawing.Size(327, 22);
+            this.showAzC.Text = "Отображать азимутальный круг в центре";
+            this.showAzC.Click += new System.EventHandler(this.showAzC_Click_1);
+            // 
+            // showAzM
+            // 
+            this.showAzM.Name = "showAzM";
+            this.showAzM.Size = new System.Drawing.Size(327, 22);
+            this.showAzM.Text = "Отображать азимутальный крут по клику";
+            this.showAzM.Click += new System.EventHandler(this.showAzM_Click_1);
+            // 
             // ShowTileBorderBtn
             // 
             this.ShowTileBorderBtn.Name = "ShowTileBorderBtn";
@@ -376,6 +395,13 @@ namespace NaviMapNet
             this.ShowReloadTilesBtn.Text = "Перегрузить тайлы";
             this.ShowReloadTilesBtn.Click += new System.EventHandler(this.reloadTilesToolStripMenuItem_Click);
             // 
+            // DOP
+            // 
+            this.DOP.Name = "DOP";
+            this.DOP.Size = new System.Drawing.Size(327, 22);
+            this.DOP.Text = "Дополнительно";
+            this.DOP.Visible = false;
+            // 
             // labelLoading
             // 
             this.labelLoading.BackColor = System.Drawing.Color.Transparent;
@@ -425,13 +451,6 @@ namespace NaviMapNet
             this.zoomLevels.Click += new System.EventHandler(this.zoomLevels_Click);
             this.zoomLevels.Paint += new System.Windows.Forms.PaintEventHandler(this.zoomLevels_Paint);
             this.zoomLevels.MouseEnter += new System.EventHandler(this.zoomLevels_MouseEnter);
-            // 
-            // DOP
-            // 
-            this.DOP.Name = "DOP";
-            this.DOP.Size = new System.Drawing.Size(327, 22);
-            this.DOP.Text = "Дополнительно";
-            this.DOP.Visible = false;
             // 
             // NaviMapNetViewer
             // 
@@ -502,6 +521,8 @@ namespace NaviMapNet
         private System.Windows.Forms.Label labelLoading;
         private System.Windows.Forms.ToolStripMenuItem вернутьсяВНормальныйРежимToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem DOP;
+        private System.Windows.Forms.ToolStripMenuItem showAzC;
+        private System.Windows.Forms.ToolStripMenuItem showAzM;
 
     }
 }

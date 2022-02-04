@@ -30,7 +30,7 @@ namespace NaviMapNet
             MouseMessageFilter.MouseMove -= mv;
             MouseMessageFilter.MouseDown -= md;
             MouseMessageFilter.MouseUp -= mu;
-            Dispose();            
+            Dispose();
         }
 
         #region override
@@ -61,7 +61,7 @@ namespace NaviMapNet
 
         private int WebRequestTimeout_ = 100000;
         public int WebRequestTimeout { get { return WebRequestTimeout_; } set { WebRequestTimeout_ = value; } }
-        
+
         private bool _invertBackground = false;
         public bool InvertBackground { get { return _invertBackground; } set { _invertBackground = value; this.ReloadMap(); } }
 
@@ -146,7 +146,7 @@ namespace NaviMapNet
             OSM_Mapnik = 0x03,
             OSM_Openvkarte = 0x04,
             OSM_Wikimapia = 0x05,
-            
+
             OSM_MapSerfer = 0x07,
             OSM_Cyclemap = 0x08,
             OSM_MapQuest = 0x09,
@@ -154,7 +154,7 @@ namespace NaviMapNet
             OSM_Gray = 0x11,
             OSM_Aqua = 0x12,
             OSM_HOT = 0x13,
-            
+
             Rosreestr = 0x06,
             Custom_MBTiles = 0xFC,
             Custom_LocalFiles = 0xFD,
@@ -175,26 +175,26 @@ namespace NaviMapNet
             {
                 if (ImageSourceService_ == value) return;
                 ImageSourceService_ = value;
-                if(value == MapServices.Navicom_Tiles)
-                {                    
+                if (value == MapServices.Navicom_Tiles)
+                {
                     ImageSourceType_ = ImageSourceTypes.tiles;
                     ImageSourceUrl_ = "http://maps.navicom.ru/nms/getTile.ashx?TEST;{x};{y};{z}";
                     ReloadMap();
                 };
-                if(value == MapServices.Navicom_WMS)
+                if (value == MapServices.Navicom_WMS)
                 {
                     ImageSourceType_ = ImageSourceTypes.single;
                     ImageSourceProjection_ = ImageSourceProjections.EPSG4326;
                     ImageSourceUrl_ = "http://maps.navicom.ru/nms/getMapWMS.ashx?key=TEST&{wms}";
                     ReloadMap();
                 };
-                if(value == MapServices.OSM_Mapnik)
+                if (value == MapServices.OSM_Mapnik)
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
                     ImageSourceUrl_ = "http://tile.openstreetmap.org/{z}/{x}/{y}.png";
                     ReloadMap();
                 };
-                if(value == MapServices.OSM_Openvkarte)
+                if (value == MapServices.OSM_Openvkarte)
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
                     ImageSourceUrl_ = "http://tile.xn--pnvkarte-m4a.de/tilegen/{z}/{x}/{y}.png";
@@ -247,8 +247,8 @@ namespace NaviMapNet
                     ImageSourceType_ = ImageSourceTypes.tiles;
                     ImageSourceUrl_ = "http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png";
                     ReloadMap();
-                };             
-                if(value == MapServices.Rosreestr)
+                };
+                if (value == MapServices.Rosreestr)
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
                     ImageSourceUrl_ = "http://c.maps.rosreestr.ru/ArcGIS/rest/services/BaseMaps/BaseMap/MapServer/tile/{z}/{y}/{x}";
@@ -263,8 +263,8 @@ namespace NaviMapNet
                 if (value == MapServices.Custom_LocalFiles)
                 {
                     ImageSourceType_ = ImageSourceTypes.tiles;
-                    if(ImageSourceUrl_.ToLower().IndexOf("http://") == 0)
-                        ImageSourceUrl_ = NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\CACHE\" + ((int)MapServices.OSM_Mapnik).ToString("X8") +  @"\L{l}\R{r}\C{c}.png";
+                    if (ImageSourceUrl_.ToLower().IndexOf("http://") == 0)
+                        ImageSourceUrl_ = NaviMapNet.NaviMapNetViewer.GetCurrentDir() + @"\CACHE\" + ((int)MapServices.OSM_Mapnik).ToString("X8") + @"\L{l}\R{r}\C{c}.png";
                     ReloadMap();
                 };
                 if (value == MapServices.Custom_LocalHost_WMS7759)
@@ -302,7 +302,7 @@ namespace NaviMapNet
         /// <summary>
         ///     Тип источника картинки
         /// </summary>
-        public ImageSourceTypes ImageSourceType { get { return ImageSourceType_; } set { if(ImageSourceService_ != MapServices.Custom_UserDefined) return; ImageSourceType_ = value; ReloadMap(); } }
+        public ImageSourceTypes ImageSourceType { get { return ImageSourceType_; } set { if (ImageSourceService_ != MapServices.Custom_UserDefined) return; ImageSourceType_ = value; ReloadMap(); } }
         /// <summary>
         ///     Путь получения карты
         /// </summary>
@@ -319,12 +319,17 @@ namespace NaviMapNet
         ///     {w} - wikimapia server replacement
         ///     {s} - a/b/c replacement
         /// </summary>
-        public string ImageSourceUrl { get { return ImageSourceUrl_; } set {
-            if ((ImageSourceService_ != MapServices.Custom_UserDefined) && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (ImageSourceService_ != MapServices.Custom_MBTiles)) return;
-            ImageSourceUrl_ = value; ReloadMap();
-        } }
+        public string ImageSourceUrl
+        {
+            get { return ImageSourceUrl_; }
+            set
+            {
+                if ((ImageSourceService_ != MapServices.Custom_UserDefined) && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (ImageSourceService_ != MapServices.Custom_MBTiles)) return;
+                ImageSourceUrl_ = value; ReloadMap();
+            }
+        }
         #endregion
-        
+
         #region Map Center & Zoom Coordinates
         /// <summary>
         ///     Центр карты в градусах WGS84, Широта
@@ -341,12 +346,12 @@ namespace NaviMapNet
         {
             get
             {
-               return CenterLat_;
+                return CenterLat_;
             }
             set
             {
-                if(value < -90) return;
-                if(value > 90) return;
+                if (value < -90) return;
+                if (value > 90) return;
                 CenterLat_ = value;
                 ReloadMap();
             }
@@ -362,12 +367,12 @@ namespace NaviMapNet
         {
             get
             {
-               return CenterLon_;
+                return CenterLon_;
             }
             set
             {
-                if(value < -180) return;
-                if(value > 180) return;
+                if (value < -180) return;
+                if (value > 180) return;
                 CenterLon_ = value;
                 ReloadMap();
             }
@@ -375,7 +380,7 @@ namespace NaviMapNet
         /// <summary>
         ///     Центр карты в градусах WGS84, Долгота
         /// </summary>
-        public double CenterDegreesX { get { return CenterLon_; } set { CenterDegreesLon = value; }}
+        public double CenterDegreesX { get { return CenterLon_; } set { CenterDegreesLon = value; } }
         /// <summary>
         ///     Центр карты в метрах проекции, X
         /// </summary>
@@ -384,7 +389,7 @@ namespace NaviMapNet
             get { return CenterMeters.X; }
             set
             {
-                CenterDegreesLon = TilesProjection.x2lon_m(value);;
+                CenterDegreesLon = TilesProjection.x2lon_m(value); ;
             }
         }
         /// <summary>
@@ -447,7 +452,7 @@ namespace NaviMapNet
         {
             get
             {
-                return TilesProjection.fromLLtoMeter(new PointF((float)CenterLon_,(float)CenterLat_));
+                return TilesProjection.fromLLtoMeter(new PointF((float)CenterLon_, (float)CenterLat_));
             }
             set
             {
@@ -471,7 +476,7 @@ namespace NaviMapNet
                 CenterLon_ = value.X;
                 ReloadMap();
             }
-        }        
+        }
         /// <summary>
         ///     Максимальный зум карты
         /// </summary>
@@ -560,7 +565,7 @@ namespace NaviMapNet
                 if (mapImage.Image == null) return null;
                 Bitmap b = new Bitmap(this.Width, this.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                 Graphics g = Graphics.FromImage(b);
-                g.DrawImage(mapImage.Image, 0, 0, new Rectangle(128,128,this.Width,this.Height),GraphicsUnit.Pixel);
+                g.DrawImage(mapImage.Image, 0, 0, new Rectangle(128, 128, this.Width, this.Height), GraphicsUnit.Pixel);
                 g.Dispose();
                 return (Image)b;
             }
@@ -600,9 +605,9 @@ namespace NaviMapNet
         [Browsable(false)]
         public Bitmap ImageGIFTransparent
         {
-            get 
+            get
             {
-                return MakeTransparentGif(new Bitmap(ImageGIF), _backgroundcolor); 
+                return MakeTransparentGif(new Bitmap(ImageGIF), _backgroundcolor);
             }
         }
         /// <summary>
@@ -876,7 +881,7 @@ namespace NaviMapNet
         /// <summary>
         ///     Отрисовывать векторные слои
         /// </summary>
-        public bool DrawVector { get { return DrawVector_;  } set { DrawVector_ = value; DrawOnMapData(); } }
+        public bool DrawVector { get { return DrawVector_; } set { DrawVector_ = value; DrawOnMapData(); } }
         /// <summary>
         ///     Отображать линейку зумов
         /// </summary>
@@ -885,6 +890,16 @@ namespace NaviMapNet
         ///     Отображать перекрестие карты
         /// </summary>
         public bool ShowCross { set { crossImage.Visible = value; ShowCrossBtn.Checked = crossImage.Visible; } get { return crossImage.Visible; } }
+        /// <summary>
+        ///     Отображать Азимутальный Круг в Центре
+        /// </summary>
+        public bool ShowAzRingCenter { set { showAzRing = value; if (showAzRing) showAzClick = false; showAzC.Checked = showAzRing; showAzM.Checked = showAzClick; mapImage.Refresh(); } get { return showAzRing; } }
+        private bool showAzRing;
+        /// <summary>
+        ///     Отображать перекрестие карты
+        /// </summary>
+        public bool ShowAzRingClick { set { showAzClick = value; if (showAzClick) showAzRing = false; showAzC.Checked = showAzRing; showAzM.Checked = showAzClick; mapImage.Refresh(); } get { return showAzClick; } }
+        private bool showAzClick;
         /// <summary>
         ///     Отображать шкалу масштаба
         /// </summary>
@@ -916,6 +931,10 @@ namespace NaviMapNet
         ///     Координаты точки нажатия карты относительно центра карты в экранных пикселях
         /// </summary>
         private Point MousePositionDown_ = new Point();
+        /// <summary>
+        ///     Координаты точки отжатия карты относительно центра карты в экранных пикселях
+        /// </summary>
+        private Point MousePositionUp_ = new Point();
         /// <summary>
         ///     Map is Moving By Mouse
         /// </summary>
@@ -959,7 +978,7 @@ namespace NaviMapNet
         {
             get
             {
-                return TilesProjection.fromLLtoMeter(MousePositionDegrees);                
+                return TilesProjection.fromLLtoMeter(MousePositionDegrees);
             }
         }
 
@@ -1004,7 +1023,7 @@ namespace NaviMapNet
                 return TilesProjection.fromLLtoMeter(MouseDownDegrees);
             }
         }
-        #endregion 
+        #endregion
 
         #region Map Vector Layers
         // <summary>
@@ -1032,11 +1051,11 @@ namespace NaviMapNet
         /// <summary>
         ///     Список векторных слоев карты
         /// </summary>
-        public string[] MapLayersNames 
+        public string[] MapLayersNames
         {
             get
             {
-                if(_mapLayers.Count == 0) return new string[0];
+                if (_mapLayers.Count == 0) return new string[0];
                 string[] res = new string[_mapLayers.Count];
                 for (int i = 0; i < res.Length; i++) res[i] = _mapLayers[i].Name;
                 return res;
@@ -1151,16 +1170,16 @@ namespace NaviMapNet
         private bool KeyDownShift = false;
 
         private void NaviMapNetViewer_KeyUp(object sender, KeyEventArgs e)
-        {            
+        {
             if (e.KeyValue == 18) KeyDownAlt = false;
             if (e.KeyValue == 17) KeyDownControl = false;
             if (e.KeyValue == 16) KeyDownShift = false;
 
-            ChangeKeyedMapCursor();            
+            ChangeKeyedMapCursor();
         }
 
         private void NaviMapNetViewer_KeyDown(object sender, KeyEventArgs e)
-        {           
+        {
             if (e.KeyValue == 18) KeyDownAlt = true;
             if (e.KeyValue == 17) KeyDownControl = true;
             if (e.KeyValue == 16) KeyDownShift = true;
@@ -1211,13 +1230,13 @@ namespace NaviMapNet
             me.BorderColor = Color.Red;
             me.BodyColor = Color.Transparent;
             me.LineWidth = 3;
-            tl.Add(me);            
+            tl.Add(me);
 
             MapLine ml = new MapLine(new PointF((float)39.93084, (float)52.48743), new PointF((float)39.93084, (float)52.49743));
             ml.Color = Color.DarkGreen;
             ml.Width = 5;
             tl.Add(ml);
-            
+
             MapPolyLine mp = new MapPolyLine(new PointF[] { 
                 new PointF((float)39.93084, (float)52.48743), 
                 new PointF((float)39.95084, (float)52.49743), 
@@ -1305,7 +1324,7 @@ namespace NaviMapNet
                 cp.Y += (float)(inc > 0 ? dy / 2.0 : -1 * dy);
                 CenterLat_ = cp.Y;
                 CenterLon_ = cp.X;
-               
+
                 ZoomID_ = (byte)newZoom;
                 ReloadMap();
             };
@@ -1316,6 +1335,8 @@ namespace NaviMapNet
             {
                 ChangeKeyedMapCursor();
 
+                MousePositionUp_ = MousePositionScreen_;
+                
                 if (MouseMapMove_)
                 {
                     MouseMapMove_ = false;
@@ -1324,7 +1345,8 @@ namespace NaviMapNet
                         mapImage.Left = 0;
                         mapImage.Top = 0;
                         if (!MouseMoveReal) InternalPopup(sender, e);
-                        MouseMoveReal = false;
+                        MouseMoveReal = false;                        
+                        DrawAzimuthOnClick(e);
                         return;
                     };
 
@@ -1350,10 +1372,17 @@ namespace NaviMapNet
                     else
                         Selabel.Visible = false;
                 };
-                if(!MouseMoveReal) InternalPopup(sender, e);
+                if (!MouseMoveReal) InternalPopup(sender, e);
                 MouseMoveReal = false;
             }
             catch { };
+        }
+
+        private void DrawAzimuthOnClick(MouseEventArgs e)
+        {
+            if (!showAzClick) return;
+            if (e.Button != MouseButtons.Left) return;
+            mapImage.Refresh();
         }
 
         public void ZoomByArea(double[] minXminYmaxXmaxY)
@@ -1379,7 +1408,7 @@ namespace NaviMapNet
             int newZoom = ZoomID;
             for (int i = 1; i < ZoomLevels_.Length; i++)
             {
-                if ((Math.Min((double)(ZoomLevels_[i] * this.Width) / (double)areaWidth, ((double)(ZoomLevels_[i] * this.Height))/(double)areaHeight)) < 1) 
+                if ((Math.Min((double)(ZoomLevels_[i] * this.Width) / (double)areaWidth, ((double)(ZoomLevels_[i] * this.Height)) / (double)areaHeight)) < 1)
                     break;
                 newZoom = i;
             };
@@ -1449,7 +1478,7 @@ namespace NaviMapNet
         }
 
         private void MouseMessageFilter_MouseDown(object sender, MouseEventArgs e)
-        {            
+        {
             try // IF DISPOSED
             {
             }
@@ -1481,7 +1510,7 @@ namespace NaviMapNet
                     int _ms_x = MousePositionDown_.X - MousePositionScreen_.X;
                     int _ms_y = MousePositionDown_.Y - MousePositionScreen_.Y;
                     Point pFrom = mapImage.PointToClient(new Point(e.X + _ms_x, e.Y + _ms_y));
-                    Point pTo = mapImage.PointToClient(new Point(e.X, e.Y));                    
+                    Point pTo = mapImage.PointToClient(new Point(e.X, e.Y));
                     Selabel.Left = (int)Math.Min(pFrom.X, pTo.X);
                     Selabel.Top = (int)Math.Min(pFrom.Y, pTo.Y);
                     Selabel.Width = (int)Math.Abs(_ms_x);
@@ -1586,8 +1615,8 @@ namespace NaviMapNet
             MouseOverMap_ = false;
             this.OnMouseLeave(e);
         }
-        #endregion                
-                                        
+        #endregion
+
         #region Draw Map & Vector Layers
         /// <summary>
         ///     Перерисовка карты
@@ -1624,7 +1653,7 @@ namespace NaviMapNet
             if (ImageSourceType_ == ImageSourceTypes.tiles) // TILES
             {
                 MapMerger mm = new MapMerger();
-                mm.InvertBackground = this.InvertBackground;                
+                mm.InvertBackground = this.InvertBackground;
                 mm.CacheSubDirectory = String.IsNullOrEmpty(_UserDefinedMapName) ? ((int)ImageSourceService_).ToString("X8") : _UserDefinedMapName;
                 mm.UseDiskCache = this.UseDiskCache && (ImageSourceService_ != MapServices.Custom_LocalFiles) && (ImageSourceService_ != MapServices.Custom_MBTiles) && (mm.CacheSubDirectory != (0xFF).ToString("X8"));
                 mm.MinZoom = this.TilesMinZoom_;
@@ -1657,7 +1686,7 @@ namespace NaviMapNet
 
         private string _UserDefinedMapName = null;
         public string UserDefinedMapName { get { return _UserDefinedMapName; } set { _UserDefinedMapName = value; } }
-        
+
         /// <summary>
         ///     Перерисовка векторных слоев карты
         /// </summary>
@@ -1673,13 +1702,13 @@ namespace NaviMapNet
             DrawSelection(g);
             try
             {
-                if (AfterMapDraw != null) 
-                    AfterMapDraw(g, new Rectangle(128,128,Width, Height));
+                if (AfterMapDraw != null)
+                    AfterMapDraw(g, new Rectangle(128, 128, Width, Height));
             }
-            catch { };                        
+            catch { };
             g.Dispose();
         }
-      
+
         /// <summary>
         ///     Draw Vectors Data
         /// </summary>
@@ -1701,9 +1730,11 @@ namespace NaviMapNet
                         if (mo.ObjectType == MapObjectType.mPoint)
                         {
                             bool Squared = false;
-                            try { Squared = ((MapPoint)mo).Squared; } catch { };
-                            try { Squared = ((MapMultiPoint)mo).Squared; } catch { };
-                            foreach (PointF pnt in mo.Points) 
+                            try { Squared = ((MapPoint)mo).Squared; }
+                            catch { };
+                            try { Squared = ((MapMultiPoint)mo).Squared; }
+                            catch { };
+                            foreach (PointF pnt in mo.Points)
                                 DrawMapPoint(g, pnt, mo.SizePixels, Squared, mo.BodyColor, mo.Img);
                         };
                         if (mo.ObjectType == MapObjectType.mEllipse)
@@ -1715,7 +1746,7 @@ namespace NaviMapNet
                         if (mo.ObjectType == MapObjectType.mLine)
                         {
                             Rectangle bnds = mo.GetBoundsForZoom(ZoomID_);
-                            if((mo.DrawEvenSizeIsTooSmall) || ((Math.Abs(bnds.Width) > 2) || (Math.Abs(bnds.Height) > 2)))
+                            if ((mo.DrawEvenSizeIsTooSmall) || ((Math.Abs(bnds.Width) > 2) || (Math.Abs(bnds.Height) > 2)))
                                 //for (int i = 1; i < mo.Points.Length; i++) DrawMapLine(g, mo.Points[i - 1], mo.Points[i], mo.BodyColor, mo.SizePixels.Width);
                                 DrawMapLines(g, mo.Points, mo.BodyColor, mo.SizePixels.Width);
                         };
@@ -1749,9 +1780,9 @@ namespace NaviMapNet
         /// <param name="g"></param>
         private void DrawSelection(Graphics g)
         {
-            if(_selLayer[0].Visible)
+            if (_selLayer[0].Visible)
             {
-                MapObject mo = _selLayer[0][0];                
+                MapObject mo = _selLayer[0][0];
                 if (mo.Visible && mo.ShowObject(ZoomID_))
                 {
                     Rectangle bnds = mo.GetBoundsForZoom(ZoomID_);
@@ -1779,7 +1810,7 @@ namespace NaviMapNet
         }
 
         public delegate void AfterDraw(Graphics g, Rectangle rect);
-        public AfterDraw AfterMapDraw;        
+        public AfterDraw AfterMapDraw;
 
         /// <summary>
         ///     Draw Map Vector Points
@@ -1858,7 +1889,7 @@ namespace NaviMapNet
         private void DrawMapLines(Graphics g, PointF[] points, Color color, int width)
         {
             PointF[] pointsLocal = new PointF[points.Length];
-            for(int i=0;i<points.Length;i++)
+            for (int i = 0; i < points.Length; i++)
                 pointsLocal[i] = PixelsToScreen(DegreesToPixels(points[i]));
             Pen pen = new Pen(new SolidBrush(color));
             pen.Width = width;
@@ -1901,13 +1932,13 @@ namespace NaviMapNet
             };
 
             Random rnd = new Random();
-            string[] abs = new string[]{"a","b","c"};
+            string[] abs = new string[] { "a", "b", "c" };
             // если перекрытие не состоялось - включаем алгоритм
             string path = ImageSourceUrl_;
             path = path.Replace("{x}", x.ToString()).Replace("{y}", y.ToString()).Replace("{z}", z.ToString());
             path = path.Replace("{l}", TwoZ(z < 10 ? z - 4 : z - 10).ToString()).Replace("{r}", ToHex8(y).ToString()).Replace("{c}", ToHex8(x).ToString());
             path = path.Replace("{w}", ((x % 4) + (y % 4) * 4).ToString());
-            path = path.Replace("{s}", abs[rnd.Next(1,3)] );
+            path = path.Replace("{s}", abs[rnd.Next(1, 3)]);
             LastRequestedFile_ = path;
             return path;
         }
@@ -1934,7 +1965,7 @@ namespace NaviMapNet
                 Point tl = TilesProjection.fromLLtoPixel(_selLayer[0][0].Points[0].Y, _selLayer[0][0].Points[0].X, ZoomID_);
                 Point br = TilesProjection.fromLLtoPixel(_selLayer[0][0].Points[2].Y, _selLayer[0][0].Points[2].X, ZoomID_);
 
-                return new int[] {tl.X, br.Y, br.X, tl.Y };
+                return new int[] { tl.X, br.Y, br.X, tl.Y };
             }
         }
         /// <summary>
@@ -2121,7 +2152,7 @@ namespace NaviMapNet
             get
             {
                 int[] b = MapBoundsMinMaxPixels;
-                return new Point[] { new Point(b[0],b[3]),new Point(b[2],b[1]) };
+                return new Point[] { new Point(b[0], b[3]), new Point(b[2], b[1]) };
             }
         }
         /// <summary>
@@ -2249,7 +2280,7 @@ namespace NaviMapNet
                 b[3] = TilesProjection.lat2y_m(b[3]);
                 return new PointF[] { new PointF((float)b[0], (float)b[3]), new PointF((float)b[2], (float)b[1]) };
             }
-        }  
+        }
         /// <summary>
         ///     left-top,bottom-right
         /// </summary>
@@ -2261,7 +2292,7 @@ namespace NaviMapNet
                 return new PointF[] { new PointF((float)b[0], (float)b[3]), new PointF((float)b[2], (float)b[1]) };
             }
         }
-        #endregion                
+        #endregion
 
         #region Converstions & Operations
         public Point DegreesToPixels(PointF degrees)
@@ -2293,7 +2324,7 @@ namespace NaviMapNet
         public Point PixelsToScreen(Point pixels)
         {
             Point cp = CenterPixels;
-            return new Point(pixels.X - cp.X + OversizeWidth / 2 ,pixels.Y - cp.Y + OversizeHeight / 2);
+            return new Point(pixels.X - cp.X + OversizeWidth / 2, pixels.Y - cp.Y + OversizeHeight / 2);
         }
         public Size MetersToPixels(SizeF meters)
         {
@@ -2376,7 +2407,7 @@ namespace NaviMapNet
         private void zoomLevels_MouseLeave(object sender, EventArgs e)
         {
             ChangeKeyedMapCursor();
-        }        
+        }
         private void zoomLevels_MouseMove(object sender, MouseEventArgs e)
         {
             zoomLevels_ZoomID = -1;
@@ -2442,7 +2473,7 @@ namespace NaviMapNet
             g.DrawString(ztext, new Font("Calibri", 8), new SolidBrush(Color.FromArgb(250, 0, 0, 0)), (float)(tmp_x1 / 2 - sz.Width / 2), -3);
             g.Dispose();
         }
-        #endregion                
+        #endregion
 
         public static Image GetEmptyTile(Color bgColor)
         {
@@ -2452,7 +2483,7 @@ namespace NaviMapNet
             g.Clear(bgColor);
             Font f = new Font("Arial", 10);
             Brush b = new SolidBrush(Color.Silver);
-            g.DrawString(t, f, b, new PointF(40,40));
+            g.DrawString(t, f, b, new PointF(40, 40));
             g.Dispose();
             return (Image)bmp;
         }
@@ -2537,7 +2568,7 @@ namespace NaviMapNet
                 //if (err.Status != System.Net.WebExceptionStatus.ProtocolError)
                 //    throw new System.Net.WebException(err.Message, err);
             };
-        }  
+        }
 
         private void mapImage_MouseMove(object sender, MouseEventArgs e)
         {
@@ -2571,7 +2602,7 @@ namespace NaviMapNet
                 {
                     Geometry.TPolygon p = new Geometry.TPolygon(_selLayer[0][0].Points);
                     Geometry.TPoint d = new Geometry.TPoint(MousePositionDegrees);
-                    if(Geometry.PointInPolygon(d, p))
+                    if (Geometry.PointInPolygon(d, p))
                         ShowSelectionInfo();
                     else
                         ShowAdditInfo();
@@ -2604,20 +2635,20 @@ namespace NaviMapNet
             }
             catch { };
         }
-        
+
         private void btnCopyToolStripMenuItem_Click(object sender, EventArgs e)
         {
             BreakNext = false;
             double lat = this.CenterDegreesLat;
             double lon = this.CenterDegreesLon;
             if (InputLatLon("Map Center", "Set Map Center to:", ref lat, ref lon) == DialogResult.OK)
-                this.CenterDegrees = new PointF((float)lon, (float)lat);            
+                this.CenterDegrees = new PointF((float)lon, (float)lat);
         }
 
         private void reloadTilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             BreakNext = false;
-            this.ReloadMap();            
+            this.ReloadMap();
         }
 
         private void mttShift_Click(object sender, EventArgs e)
@@ -2645,7 +2676,7 @@ namespace NaviMapNet
             PointF cf = CenterDegrees;
             float dx = cf.X - pf.X;
             float dy = cf.Y - pf.Y;
-            double[] ll = new double[] {pf.X, pf.Y };
+            double[] ll = new double[] { pf.X, pf.Y };
             if (InputLatLon("Map Click", "Map clicked at position:", ref ll[1], ref ll[0]) == DialogResult.OK)
                 CenterDegrees = new PointF((float)(ll[0] + dx), (float)(ll[1] + dy));
         }
@@ -2697,11 +2728,11 @@ namespace NaviMapNet
         {
             BreakNext = false;
             ShowAdditInfo();
-        }        
+        }
 
         private void defMenu_Opening(object sender, CancelEventArgs e)
         {
-           if (DefaultMenuOpening != null) DefaultMenuOpening(sender, e);
+            if (DefaultMenuOpening != null) DefaultMenuOpening(sender, e);
         }
 
         public void AddItemToDefaultMenu(ToolStripItem item)
@@ -2714,7 +2745,7 @@ namespace NaviMapNet
         }
 
         private void SelShiftArea(object sender, EventArgs e)
-        {                        
+        {
             //PointF[] sara = SelectionBoundsAreaDegrees;
 
             Point pCentSelScreen = this.PointToClient(mapImage.PointToScreen(new Point(Selabel.Left + Selabel.Width / 2, Selabel.Top + Selabel.Height / 2)));
@@ -2730,7 +2761,7 @@ namespace NaviMapNet
             double[] llmax = TilesProjection.fromPixelToLL(new double[] { b[2], b[1] }, ZoomID_);
             PointF[] sara = new PointF[] { new PointF((float)llmin[0], (float)llmax[1]), new PointF((float)llmax[0], (float)llmin[1]) };
 
-            _selLayer[0][0].Points =  new PointF[] { new PointF(sara[0].X, sara[0].Y), new PointF(sara[1].X, sara[0].Y), new PointF(sara[1].X, sara[1].Y), new PointF(sara[0].X, sara[1].Y) };
+            _selLayer[0][0].Points = new PointF[] { new PointF(sara[0].X, sara[0].Y), new PointF(sara[1].X, sara[0].Y), new PointF(sara[1].X, sara[1].Y), new PointF(sara[0].X, sara[1].Y) };
             _selLayer[0][0].Visible = true;
             HSB.Visible = true;
             hideSelBox.Visible = true;
@@ -2739,7 +2770,7 @@ namespace NaviMapNet
             Zoom2Sel.Visible = true;
             this.DrawOnMapData();
 
-            if (SelectingMapArea != null) SelectingMapArea(sender, e);            
+            if (SelectingMapArea != null) SelectingMapArea(sender, e);
         }
 
         [Browsable(true)]
@@ -2749,8 +2780,8 @@ namespace NaviMapNet
         [Browsable(true)]
         public EventHandler PreparingAdditionalSelectionInfo;
         [Browsable(true)]
-        public System.ComponentModel.CancelEventHandler DefaultMenuOpening;    
-    
+        public System.ComponentModel.CancelEventHandler DefaultMenuOpening;
+
         [Browsable(true)]
         public bool ShowInfoOnDblClick { get { return _ShowInfoOnDblClick; } set { _ShowInfoOnDblClick = value; } }
         private bool _ShowInfoOnDblClick = false;
@@ -2891,7 +2922,7 @@ namespace NaviMapNet
         }
 
         public static DialogResult ShowAdditionalInfoDialog(string title, string prompt, string text)
-        {           
+        {
             Form form = new Form();
             Label label = new Label();
             TextBox textBox = new TextBox();
@@ -2978,8 +3009,8 @@ namespace NaviMapNet
             txt += String.Format("Точка клика, источник: {0}\r\n", GetTileUrl(xyclick.X, xyclick.Y, this.ZoomID));
             txt += "\r\n";
 
-            if (PreparingAdditionalPointInfo != null) 
-                if (!String.IsNullOrEmpty(_additClickInfoText)) 
+            if (PreparingAdditionalPointInfo != null)
+                if (!String.IsNullOrEmpty(_additClickInfoText))
                     txt += _additClickInfoText;
 
             ShowAdditionalInfoDialog("Информация", "Вспомогательная информация по точке:", txt);
@@ -3006,21 +3037,21 @@ namespace NaviMapNet
 
             PointF pcenter = this.CenterDegrees;
             PointF[] area = SelectionBoundsAreaDegrees;
-            
+
             string txt = "";
             txt += String.Format("Центр карты, широта: {0}\r\n", pcenter.Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += String.Format("Центр карты, долгота: {0}\r\n", pcenter.X.ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += "\r\n";
-            txt += String.Format("Зона выделения, центр: {0} {1}\r\n", ((area[0].Y+area[1].Y)/2).ToString(System.Globalization.CultureInfo.InvariantCulture), ((area[0].X+area[1].X)/2).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            txt += String.Format("Зона выделения, центр: {0} {1}\r\n", ((area[0].Y + area[1].Y) / 2).ToString(System.Globalization.CultureInfo.InvariantCulture), ((area[0].X + area[1].X) / 2).ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += "\r\n";
             txt += String.Format("Зона выделения, лево: {0}\r\n", area[0].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += String.Format("Зона выделения, верх: {0}\r\n", area[0].Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += String.Format("Зона выделения, право: {0}\r\n", area[1].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            txt += String.Format("Зона выделения, низ: {0}\r\n", area[1].Y.ToString(System.Globalization.CultureInfo.InvariantCulture));                        
+            txt += String.Format("Зона выделения, низ: {0}\r\n", area[1].Y.ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += "\r\n";
             txt += String.Format("Зона выделения, лево-верх: {0} {1}\r\n", area[0].Y.ToString(System.Globalization.CultureInfo.InvariantCulture), area[0].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
             txt += String.Format("Зона выделения, право-низ: {0} {1}\r\n", area[1].Y.ToString(System.Globalization.CultureInfo.InvariantCulture), area[1].X.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            txt += "\r\n";                                    
+            txt += "\r\n";
 
             Int64 ttlx = 0;
             Int64 ttly = 0;
@@ -3051,10 +3082,10 @@ namespace NaviMapNet
             txt += String.Format("Зона выделения, Площадь: {0} кв км\r\n", Sq.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
             txt += "\r\n";
 
-            if (PreparingAdditionalSelectionInfo != null) 
-                if (!String.IsNullOrEmpty(_additSelectionInfoText)) 
+            if (PreparingAdditionalSelectionInfo != null)
+                if (!String.IsNullOrEmpty(_additSelectionInfoText))
                     txt += _additSelectionInfoText;
-            
+
             ShowAdditionalInfoDialog("Информация", "Вспомогательная информация по области выделения:", txt);
         }
 
@@ -3134,7 +3165,7 @@ namespace NaviMapNet
         }
 
         private void saveBoundsShapeToolStripMenuItem_Click(object sender, EventArgs e)
-        {            
+        {
             BreakNext = false;
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.DefaultExt = ".shp";
@@ -3235,6 +3266,35 @@ namespace NaviMapNet
         {
             BreakNext = false;
         }
+
+        private void mapImage_Paint(object sender, PaintEventArgs e)
+        {
+            if (showAzRing || (showAzClick && ((Math.Abs(MousePositionUp_.X) > this.Width / 2)) || (Math.Abs(MousePositionUp_.Y) > this.Height / 2)))
+            {
+                Image im = Properties.Resources.CRing;
+                e.Graphics.DrawImage(im, (int)(128 + this.Width / 2 - 150 - 4), (int)(128 + this.Height / 2 - 150 + 2), im.Width, im.Height);
+            };
+            if (showAzClick)
+            {
+                Point p = MousePositionUp_;
+                if ((Math.Abs(p.X - MousePositionDown_.X) > 5) && (Math.Abs(p.Y - MousePositionDown_.Y) > 5)) p = new Point(0, 0);
+                Image im = Properties.Resources.CRing;
+                e.Graphics.DrawImage(im, (int)(128 + this.Width / 2 - 150 - 4 + p.X), (int)(128 + this.Height / 2 - 150 + 2 + p.Y), im.Width, im.Height);
+            };
+            base.OnPaint(e);
+        }
+
+        private void showAzC_Click_1(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.ShowAzRingCenter = !this.ShowAzRingCenter;            
+        }
+
+        private void showAzM_Click_1(object sender, EventArgs e)
+        {
+            BreakNext = false;
+            this.ShowAzRingClick = !this.ShowAzRingClick;
+        }
     }
 
     internal class MouseMessageFilter : IMessageFilter
@@ -3287,7 +3347,7 @@ namespace NaviMapNet
                 return c;
             }
         }
-        
+
         /// <summary>
         ///     ZOOM OUT
         /// </summary>
@@ -3308,7 +3368,7 @@ namespace NaviMapNet
         public static Cursor Shift
         {
             get
-            {                
+            {
                 return Cursors.Arrow;
             }
         }
@@ -3742,7 +3802,7 @@ namespace NaviMapNet
         {
             System.Net.ServicePointManager.DefaultConnectionLimit = 100;
             CalcGeo();
-        }        
+        }
 
         public void SetMap(double Lat, double Lon, int Zoom)
         {
@@ -3860,7 +3920,7 @@ namespace NaviMapNet
                     Image im = null;
                     bool isEmpty = true;
                     try
-                    {                        
+                    {
                         im = NaviMapNetViewer.GetImageFromURL(url, WebRequestTimeout_, NotFoundTileColor_, out isEmpty);
                     }
                     catch { };
@@ -3890,7 +3950,7 @@ namespace NaviMapNet
             if (MBTilesSQLConn == null) MBTilesSQLConn = new System.Data.SQLite.SQLiteConnection();
             System.Data.SQLite.SQLiteConnection sqlc = (System.Data.SQLite.SQLiteConnection)MBTilesSQLConn;
 
-            string connstr = @"Data Source=" + fName + ";Version=3;";            
+            string connstr = @"Data Source=" + fName + ";Version=3;";
             if (sqlc.ConnectionString != connstr) { sqlc.Close(); sqlc.ConnectionString = connstr; };
 
             try
@@ -3902,7 +3962,7 @@ namespace NaviMapNet
                 System.Data.SQLite.SQLiteDataReader dr = sql.ExecuteReader();
                 if ((dr != null) && (dr.Read())) res = (byte[])dr[0];
                 dr.Close();
-                if(res != null) return byteArrayToImage(res);
+                if (res != null) return byteArrayToImage(res);
             }
             catch { }
             return NaviMapNetViewer.GetEmptyTile(Color.Transparent);
@@ -4000,7 +4060,7 @@ namespace NaviMapNet
             List<Point[]> res = new List<Point[]>();
             for (int inc = 8; inc < 256; inc += 32)
             {
-                res.Add(new Point[] { new Point(sx + inc, sy), new Point(sx + inc + 8, sy) });                
+                res.Add(new Point[] { new Point(sx + inc, sy), new Point(sx + inc + 8, sy) });
             };
             return res.ToArray();
         }
@@ -4069,7 +4129,7 @@ namespace NaviMapNet
                         {
                             bool cached = false;
                             Image img = GetTile(curx, y, mZoom, out cached);
-                            if(InvertBackground) img = InvertImage(img);
+                            if (InvertBackground) img = InvertImage(img);
                             if (img != null)
                                 g.DrawImage(img, curdrawx, drawy, 256, 256);
                             if (DrawTileXYZ)
@@ -4093,12 +4153,12 @@ namespace NaviMapNet
                                     g.DrawLine(p, line[0], line[1]);
                                 if ((TilesRenderingZoneSize > 1) && ((curx % TilesRenderingZoneSize) == 0))
                                     g.DrawLine(z, curdrawx, drawy, curdrawx, drawy + 256);
-                                    //foreach (Point[] line in DashedVertical(curdrawx, drawy))
-                                    //    g.DrawLine(z, line[0], line[1]);
+                                //foreach (Point[] line in DashedVertical(curdrawx, drawy))
+                                //    g.DrawLine(z, line[0], line[1]);
                                 if ((TilesRenderingZoneSize > 1) && ((y % TilesRenderingZoneSize) == 0))
                                     g.DrawLine(z, curdrawx, drawy, curdrawx + 256, drawy);
-                                    //foreach (Point[] line in DashedHorizontal(curdrawx, drawy))
-                                    //    g.DrawLine(z, line[0], line[1]);
+                                //foreach (Point[] line in DashedHorizontal(curdrawx, drawy))
+                                //    g.DrawLine(z, line[0], line[1]);
                             };
                         }
                         catch (Exception ex) { };
@@ -4126,6 +4186,6 @@ namespace NaviMapNet
             };
 
             return im;
-        }        
+        }
     }
 }

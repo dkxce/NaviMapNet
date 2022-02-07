@@ -894,12 +894,12 @@ namespace NaviMapNet
         ///     Отображать Азимутальный Круг в Центре
         /// </summary>
         public bool ShowAzRingCenter { set { showAzRing = value; if (showAzRing) showAzClick = false; showAzC.Checked = showAzRing; showAzM.Checked = showAzClick; mapImage.Refresh(); } get { return showAzRing; } }
-        private bool showAzRing;
+        private bool showAzRing = false;
         /// <summary>
         ///     Отображать перекрестие карты
         /// </summary>
         public bool ShowAzRingClick { set { showAzClick = value; if (showAzClick) showAzRing = false; showAzC.Checked = showAzRing; showAzM.Checked = showAzClick; mapImage.Refresh(); } get { return showAzClick; } }
-        private bool showAzClick;
+        private bool showAzClick = false;
         /// <summary>
         ///     Отображать шкалу масштаба
         /// </summary>
@@ -3269,7 +3269,7 @@ namespace NaviMapNet
 
         private void mapImage_Paint(object sender, PaintEventArgs e)
         {
-            if (showAzRing || (showAzClick && ((Math.Abs(MousePositionUp_.X) > this.Width / 2)) || (Math.Abs(MousePositionUp_.Y) > this.Height / 2)))
+            if (showAzRing || (showAzClick && ((Math.Abs(MousePositionUp_.X) > this.Width / 2) || (Math.Abs(MousePositionUp_.Y) > this.Height / 2))))
             {
                 Image im = Properties.Resources.CRing;
                 e.Graphics.DrawImage(im, (int)(128 + this.Width / 2 - 150 - 4), (int)(128 + this.Height / 2 - 150 + 2), im.Width, im.Height);
